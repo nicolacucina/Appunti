@@ -1,0 +1,74 @@
+Come creare un router in Ubuntu 22.04
+
+Installazione VM in VirtualBox:
+
+Non servono molte risorse per il sistema dato che dovrà fare routing, quindi basta un 1GB di RAM e 2 core assegnati.
+i core sono assegnati dinamicamente dal sistema operativo host, quindi non è un problema assegnarne un pò, mentre le RAM è riservata, con meno di 1GB non riesce proprio a partire il sistema.
+
+La parte importante sono le schede di rete, ne servono sicuramente 2:
+    -una scheda bridged con la scheda wi-fi dell'host computer, sarà l'interfaccia enp0s3
+    -una scheda collega ad una rete interna, in questo caso chiamata "lab", sarà l'interfaccia enp0s8
+modalità promiscua abilitata su "permetti tutto"
+
+Una volta avviato il sistema, occorre configurare le interfacce di rete.
+Si apre il file di config delle interfacce con il comando:
+    sudo nano /etc/netplan/00-installer-config.yaml
+
+All'interno configurare le interfacce come segue:
+...
+    enp0s3:
+        dhcp4: true
+    enp0s8:
+        dhcp4: false
+        addresses: [10.10.10.1/24]
+...
+
+In questo modo l'interfaccia enp0s3 che è collegata verso l'esterno riceverà una configurazione ip valida dal server dhcp ospitato nel router a cui è collegato l'host pc,
+mentre l'interfaccia enp0s8 invece sarà configurata staticamente con il blocco di indirizzi 10.10.10.1/24, dove l'indirizzo 10.10.10.1 sarà quello della interfaccia.
+
+Per poter rendere il sistema un router, occorre installare un server dhcp. Questo si può fare tramite il comando:
+    sudo apt-get install isc-dhcp-server
+
+Dopo l'installazione, va configurato il servizio, andando a modificare il file di config del daemon tramite il comando:
+    sudo nano /etc/dhcp/dhcpd.conf
+
+Se si scorre il file, si trova una voce commentata del tipo "this is a very basic subnet configuration" che va scommentata e modificata come segue:
+...
+subnet 10.10.10.0 netmask 255.255.255.0 {
+    range 10.10.10.10 10.10.10.200
+    option routers 10.10.10.1
+}
+...
+
+in questo modo chiunque chieda a questo server dhcp una config valida, riceverà un indirizzo nel range specificato con gateway di riferimento il 10.10.10.1, ovvero l'interfaccia enp0s8
+
+Vanno inoltre altre modifiche nel file:
+...
+option domain-name-servers 8.8.8.8
+ignore-client-uids true;
+one-lease-per-client on;
+...
+
+option domain name specifica quale sia il server DNS da utilizzare
+ignore-client-uids specifica che il server deve ignorare gli uids dei computer che fanno le rischieste, necessario quando lavoriamo con tante macchine virtuali nate dalla stessa immagine, quindi con lo stesso uids
+one lease per client fa si che ogni pc o interfaccia possa avere una sola configurazione dhcp valida in ogni dato momento
+
+Fatto questo si può lanciare il servizio con il comando:
+    sudo service isc-dhcp-server start
+
+il sistema operativo lancierà il servizio al boot da questo momento in poi 
+
+Per controllare lo stato del servizio si lancia il comando:
+    sudo service isc-dhcp-server status
+
+Ora serve abilitare il passaggio dei pacchetti tra le interfacce tramite il comando:
+    sudo sysctl net.ipv4.ip_forward=1
+
+Infine si abilita il Natting con: 
+    sudo iptables -t nat -A POSTROUTING -o enp0s3 -j MASQUERADE
+
+la flag -o enp0s3 indica "il verso" del natting, in questo caso gli ip proveniente dalla rete privata vengono convertiti in pubblici, ma quelli pubblici invece non vengono convertiti in privati.
+Se non si fosse specificata questa flag il nat sarebbe avvenuto in entrambe le direzioni
+
+Per vedere se tutto è andato a buon fine, serve aprire una nuova VM client con una sola scheda di rete collegata alla rete privata "lab".
+Se questo client ha una config ip valida con quella fornita dal server dhcp e riesce a navigare in internet, funziona tutto

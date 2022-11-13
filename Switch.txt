@@ -1,0 +1,88 @@
+Come creare uno switch tramite Ubuntu 22.04
+
+Installazione VM in VirtualBox:
+
+Anche in questo caso non servono grandi specifiche hardware, perciò basta assegnare 1GB di RAM e 1/2 core
+
+In questo caso le schede di rete devono essere configurate come segue:
+    -una scheda di rete privata legata alla rete "lab", sarà l'interfaccia enp0s3
+    -una scheda di rete privata legata alla rete "lab-int", sarà l'interfaccia enp0s8
+
+la rete "lab-int" sappresenta il collegamento tra switch e il nostro client, mentre "lab" è il collegamento tra switch e router
+
+Per poter creare lo switch si utilizza il pacchetto bridge-utils, che si installa tramite il comando:
+    sudo apt  install bridge-utils
+
+Dopo aver installato il pacchetto possiamo creare il bridge da linea di comando come segue:
+    sudo brctl addbr br0
+    sudo brctl addif br0 enp0s3 enp0s8
+
+oppure possiamo modificare il file /etc/netplan/00-installer-config.yaml come segue:
+...
+    enp0s3:
+        dhcp4: false
+    enp0s8:
+        dhcp4: false
+    bridges:
+        br0:
+                dhcp4: false
+                interfaces:
+                    - enp0s3
+                    - enp0s8
+...
+
+in questo modo lo switch viene caricato direttamente quando la macchina viene accesa
+per evitare problemi, si disabilita il dhcp in tutte le porte, anche se non dovrebbe creare conflitti.
+
+Se la VM è stata creata clonando ISN-Router, si deve disabilitare il server dhcp con il comando:
+    sudo service isc-dhcp-server stop
+o andando a modificare il file /etc/dhcp/dhcpd.conf e commentando praticamente tutto
+
+Per vedere se tutto funziona, serve lanciare sia la VM Router(configurata come specificato nel file Router.txt) che un VM Client.
+Il client deve avere una singola interfaccia di rete collegata alla rete privata lab-int e dovremmo vedere:
+-l'unica interfaccia del client configurata con un indirizzo ip ottenuto dal server dhcp che gira sul VM Router
+-il client riesce a navigare in rete
+
+Per rendere lo switch un firewall trasparente, è necessario caricare un modulo che permetta ai pacchetti strato 2 di "salire" nella pila protocollare per interagire con iptables:
+-riconfigurare lo switch per far si che si connetta ad internet:
+    sudo nano /etc/netplan/00-installer-config.yaml
+    commentare tutte le voci che riguardano il bridge
+    abilitare dhcp su enp0s3
+    sudo poweroff
+    da VirtualBox, bridgare l'interfaccia enp0s3, quindi quella legata alla rete privata "lab"
+    riaccendere la macchina
+
+-installare i pacchetti ebtables e iptables-netflow-dkms con i comandi:
+    sudo apt-get install ebtables
+    sudo apt install iptables-netflow-dkms
+
+ebtables permette di mantere della tables nel kernel Linux che lavorano con le trame ethernet
+netflow dkms serve a generare le statische netflow
+
+a questo punto riandare nel file /etc/netplan/00-installer-config.yaml e rimettere tutto come praticamente
+
+    sudo poweroff
+    rimodificare l'interfaccia rete da bridged a rete privata su "lab"
+
+Ora, caricare il modulo con il comando:
+    sudo modprobe br_netfilter
+    sudo modprobe ipt_NETFLOW destination 127.0.0.1:2055
+
+il primo carica il modulo, il secondo serve a specificare quale sia il collettore che riceverà i dati netflow, 
+l'IP qua è il loopback perchè sarà lo switch stesso a fare da collettore(o lo switch o il pc che fa da host system, uno dei due), la porta da usare è il 2055
+
+si possono creare le regole iptables utilizzando ebtables per filtrare traffico ethernet, saranno regole più semplici rispetto a quello di iptables perchè ci sono meno opzioni disponibili
+ma il funzionamento è lo stesso, se una trama ethernet matcha una regola viene fatto quanto specificato
+
+Per inviare traffico al collettore Netflow devo creare regole specifiche:
+	
+    iptables -I FORWARD -j NETFLOW
+    iptables -I INPUT -j NETFLOW
+    iptables -I OUTPUT -j NETFLOW
+
+è importante mettere queste regole in cima alle catene per far si che i pacchetti sono siano intercettati da regole precedenti, specificando che
+si vuol mettere la regola in posizione 1 come segue:
+
+    iptables -I FORWARD 1 -j NETFLOW
+
+Devo capire come interagiscono ebtables e iptables, se uso ebtables filtro trame ethernet, quindi può essere che alcune nemmeno arrivano a iptables
