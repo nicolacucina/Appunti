@@ -29,7 +29,12 @@ mentre l'interfaccia enp0s8 invece sarà configurata staticamente con il blocco 
 Per poter rendere il sistema un router, occorre installare un server dhcp. Questo si può fare tramite il comando:
     sudo apt-get install isc-dhcp-server
 
-Dopo l'installazione, va configurato il servizio, andando a modificare il file di config del daemon tramite il comando:
+Dopo l'installazione, va configurato il servizio, prima si modifica il file /etc/default/isc-dhcp-server come segue:
+...
+# On what interfaces should the DHCP server (dhcpd) serve DHCP requests?
+INTERFACESv4="enp0s8"
+
+Poi si modifica il file di config del daemon tramite il comando:
     sudo nano /etc/dhcp/dhcpd.conf
 
 Se si scorre il file, si trova una voce commentata del tipo "this is a very basic subnet configuration" che va scommentata e modificata come segue:
