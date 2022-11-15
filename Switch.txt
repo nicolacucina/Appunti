@@ -70,7 +70,6 @@ a questo punto riandare nel file /etc/netplan/00-installer-config.yaml e rimette
     sudo poweroff
     rimodificare l'interfaccia rete da bridged a rete privata su "lab"
 
-
 Ora, caricare il modulo con il comando:
     sudo modprobe br_netfilter
 

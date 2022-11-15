@@ -1,7 +1,12 @@
 Avremo un client C1 che naviga in rete "ignaro" di quanto stiamo per fare.
 C2 opera da collettore per le statistiche netflow esportate dalla middlebox che utilizziamo,
 funziona sia con uno switch che con un router virtuale.
-
+ ________________________________
+|                               _|
+|  C1------------R-------------|_|<-NIC
+|                               ||
+|              C2---------------||
+|________________________________|
 ///////////////////////////////////////////////////////////////////////////////
     CONFIG MIDDLEBOX
 ///////////////////////////////////////////////////////////////////////////////
