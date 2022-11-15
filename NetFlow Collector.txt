@@ -1,0 +1,40 @@
+Avremo un client C1 che naviga in rete "ignaro" di quanto stiamo per fare.
+C2 opera da collettore per le statistiche netflow esportate dalla middlebox che utilizziamo,
+funziona sia con uno switch che con un router virtuale.
+
+///////////////////////////////////////////////////////////////////////////////
+    CONFIG MIDDLEBOX
+///////////////////////////////////////////////////////////////////////////////
+
+netflow dkms serve a generare le statische netflow, si carica con il comando:
+
+    sudo modprobe ipt_NETFLOW destination=127.0.0.1:2055
+
+il comando, oltre a caricare il modulo, serve a specificare quale sia il collettore che riceverà i dati netflow, 
+l'IP qua è il loopback perchè sarà lo switch stesso a fare da collettore(o lo switch o il pc che fa da host system, uno dei due), la porta da usare è il 2055
+
+See, you may add options in insmod/modprobe command line, or add them in /etc/modprobe.conf or /etc/modprobe.d/ipt_NETFLOW.conf like thus:
+
+    options ipt_NETFLOW destination=127.0.0.1:2055 protocol=9 natevents=1
+
+Dalla pagina GitHub di ipt-netflow https://github.com/aabc/ipt-netflow
+
+Dato che intendiamo utilizzare un Collettore ESTERNO, va specificato l'indirizzo IP del collettore
+
+Per inviare traffico al collettore Netflow devo creare regole specifiche:
+	
+    iptables -I FORWARD -j NETFLOW
+    iptables -I INPUT -j NETFLOW
+    iptables -I OUTPUT -j NETFLOW
+
+è importante mettere queste regole in cima alle catene per far si che i pacchetti sono siano intercettati da regole precedenti, specificando che
+si vuol mettere la regola in posizione 1 come segue:
+
+    iptables -I FORWARD 1 -j NETFLOW
+
+Qui finisce la configurazione della middlebox
+
+///////////////////////////////////////////////////////////////////////////////
+    CONFIG COLLETTORE
+///////////////////////////////////////////////////////////////////////////////
+

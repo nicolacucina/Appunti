@@ -10,8 +10,12 @@ In questo caso le schede di rete devono essere configurate come segue:
 
 la rete "lab-int" sappresenta il collegamento tra switch e il nostro client, mentre "lab" è il collegamento tra switch e router
 
+///////////////////////////////////////////////////////////////////////////////
+    CONFIG
+///////////////////////////////////////////////////////////////////////////////
+
 Per poter creare lo switch si utilizza il pacchetto bridge-utils, che si installa tramite il comando:
-    sudo apt  install bridge-utils
+    sudo apt install bridge-utils
 
 Dopo aver installato il pacchetto possiamo creare il bridge da linea di comando come segue:
     sudo brctl addbr br0
@@ -43,6 +47,10 @@ Il client deve avere una singola interfaccia di rete collegata alla rete privata
 -l'unica interfaccia del client configurata con un indirizzo ip ottenuto dal server dhcp che gira sul VM Router
 -il client riesce a navigare in rete
 
+///////////////////////////////////////////////////////////////////////////////
+    TRANSPARENT FIREWALL
+///////////////////////////////////////////////////////////////////////////////
+
 Per rendere lo switch un firewall trasparente, è necessario caricare un modulo che permetta ai pacchetti strato 2 di "salire" nella pila protocollare per interagire con iptables:
 -riconfigurare lo switch per far si che si connetta ad internet:
     sudo nano /etc/netplan/00-installer-config.yaml
@@ -52,12 +60,15 @@ Per rendere lo switch un firewall trasparente, è necessario caricare un modulo 
     da VirtualBox, bridgare l'interfaccia enp0s3, quindi quella legata alla rete privata "lab"
     riaccendere la macchina
 
--installare i pacchetti ebtables e iptables-netflow-dkms con i comandi:
+-installare i pacchetti ebtables con il comando:
     sudo apt-get install ebtables
-    sudo apt install iptables-netflow-dkms
 
 ebtables permette di mantere della tables nel kernel Linux che lavorano con le trame ethernet
-netflow dkms serve a generare le statische netflow
+
+
+iptables-netflow-dkms con i comandi:
+    
+    sudo apt install iptables-netflow-dkms
 
 a questo punto riandare nel file /etc/netplan/00-installer-config.yaml e rimettere tutto come praticamente
 
@@ -66,23 +77,25 @@ a questo punto riandare nel file /etc/netplan/00-installer-config.yaml e rimette
 
 Ora, caricare il modulo con il comando:
     sudo modprobe br_netfilter
-    sudo modprobe ipt_NETFLOW destination 127.0.0.1:2055
 
-il primo carica il modulo, il secondo serve a specificare quale sia il collettore che riceverà i dati netflow, 
-l'IP qua è il loopback perchè sarà lo switch stesso a fare da collettore(o lo switch o il pc che fa da host system, uno dei due), la porta da usare è il 2055
+
+The bridge-netfilter code enables the following functionality:
+
+    {Ip,Ip6,Arp}tables can filter bridged IPv4/IPv6/ARP packets, even when encapsulated in an 802.1Q VLAN or PPPoE header. This enables the functionality of a stateful transparent firewall.
+    All filtering, logging and NAT features of the 3 tools can therefore be used on bridged frames.
+    Combined with ebtables, the bridge-nf code therefore makes Linux a very powerful transparent firewall.
+    This enables, f.e., the creation of a transparent masquerading machine (i.e. all local hosts think they are directly connected to the Internet).
+    Letting {ip,ip6,arp}tables see bridged traffic can be disabled or enabled using the appropriate proc entries, located in /proc/sys/net/bridge/:
+        bridge-nf-call-arptables
+        bridge-nf-call-iptables
+        bridge-nf-call-ip6tables
+    Also, letting the aforementioned firewall tools see bridged 802.1Q VLAN and PPPoE encapsulated packets can be disabled or enabled with a proc entry in the same directory:
+        bridge-nf-filter-vlan-tagged
+        bridge-nf-filter-pppoe-tagged
+    These proc entries are just regular files. Writing '1' to the file (echo 1 > file) enables the specific functionality, while writing a '0' to the file disables it. 
 
 si possono creare le regole iptables utilizzando ebtables per filtrare traffico ethernet, saranno regole più semplici rispetto a quello di iptables perchè ci sono meno opzioni disponibili
 ma il funzionamento è lo stesso, se una trama ethernet matcha una regola viene fatto quanto specificato
 
-Per inviare traffico al collettore Netflow devo creare regole specifiche:
-	
-    iptables -I FORWARD -j NETFLOW
-    iptables -I INPUT -j NETFLOW
-    iptables -I OUTPUT -j NETFLOW
 
-è importante mettere queste regole in cima alle catene per far si che i pacchetti sono siano intercettati da regole precedenti, specificando che
-si vuol mettere la regola in posizione 1 come segue:
-
-    iptables -I FORWARD 1 -j NETFLOW
-
-Devo capire come interagiscono ebtables e iptables, se uso ebtables filtro trame ethernet, quindi può essere che alcune nemmeno arrivano a iptables
+Per capire se funziona tutto basta vedere se il filtraggio delle trame layer 2 ha effetto sulla navigazione del client
