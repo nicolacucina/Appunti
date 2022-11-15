@@ -6,6 +6,10 @@ funziona sia con uno switch che con un router virtuale.
     CONFIG MIDDLEBOX
 ///////////////////////////////////////////////////////////////////////////////
 
+Si installa il pacchetto iptables-netflow-dkms con il comando:
+    
+    sudo apt install iptables-netflow-dkms
+
 netflow dkms serve a generare le statische netflow, si carica con il comando:
 
     sudo modprobe ipt_NETFLOW destination=127.0.0.1:2055
@@ -32,9 +36,35 @@ si vuol mettere la regola in posizione 1 come segue:
 
     iptables -I FORWARD 1 -j NETFLOW
 
-Qui finisce la configurazione della middlebox
+Qui finisce la configurazione della middlebox, se voglio vedere i flussi netflow dalla middle uso il comando:
+    sudo cat /proc/net/stat/ipt_netflow_flows
 
 ///////////////////////////////////////////////////////////////////////////////
     CONFIG COLLETTORE
 ///////////////////////////////////////////////////////////////////////////////
 
+installare il pacchetto net-tools, tramite il comando: 
+    sudo netstat -n --udp --listen 
+
+Verifico se il collettore è in ascolto, devo capire se la porta 2055 che intendo utilizzare per l'esportazione del traffico è disponibile
+
+A questo punto dovrebbe essere tutto collegato, la middlebox esporta le statistiche netflow e il collettore le elabora
+Per vedere cosa arriva al collettore si vanno a vedere alcuni file:
+    cd /var/cache/nfdump/
+    ls 
+
+si dovrebbero vedere dei file del tipo nfcapd.<timestamp>
+Utilizziamo dei comandi ricorsivi del tipo: 
+    nfdump -R /var/cache/nfdump/
+che guadando tutto dentro alla directory
+
+Si possono specificare alcune flag per il filtraggio, ad esempio:
+    -A aggrega i dati
+    -O ordina i dati in base a quello che specifichiamo, -O start ordina i flussi in base all'indirizzo
+
+oppure posso specificare condizioni come: 
+    'proto tcp and dst port 443'
+    -A srcip 'host 8.8.8.8'
+
+Se voglio salvare in un file i vari filtraggi che vado a definire devo aggiungere alla fine dei comandi visti sopra: 
+    >> /home/studente/file.txt

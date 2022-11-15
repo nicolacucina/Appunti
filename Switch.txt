@@ -65,19 +65,14 @@ Per rendere lo switch un firewall trasparente, è necessario caricare un modulo 
 
 ebtables permette di mantere della tables nel kernel Linux che lavorano con le trame ethernet
 
-
-iptables-netflow-dkms con i comandi:
-    
-    sudo apt install iptables-netflow-dkms
-
 a questo punto riandare nel file /etc/netplan/00-installer-config.yaml e rimettere tutto come praticamente
 
     sudo poweroff
     rimodificare l'interfaccia rete da bridged a rete privata su "lab"
 
+
 Ora, caricare il modulo con il comando:
     sudo modprobe br_netfilter
-
 
 The bridge-netfilter code enables the following functionality:
 
