@@ -100,7 +100,7 @@ Nel firewalling Stateful creiamo delle entry per le varie connessioni, specifica
 sudo iptables -P FORWARD DROP
     sudo iptables -A FORWARD -s 10.10.10.0/24 -m state --state NEW,RELATED,ESTABLISHED -p tcp --dport = 80 -j ACCEPT
     sudo iptables -A FORWARD -m state --state RELATED, ESTABLISHED -p tcp --sport 80 -j ACCEPT
-    sudo iptables -A FORWARD -s 10.10.10.0/24 -m state --state NEW,RELATED,ESTABLISHED -p tcp --dpost = 443 -j ACCEPT
+    sudo iptables -A FORWARD -s 10.10.10.0/24 -m state --state NEW,RELATED,ESTABLISHED -p tcp --dport = 443 -j ACCEPT
     sudo iptables -A FORWARD -m state --state RELATED, ESTABLISHED -p tcp --sport 443 -j ACCEPT
     sudo iptables -A FORWARD -s 10.10.10.0/24 -m state --state NEW, RELATED, ESTABLISHED -p udp --dport = 53 -j ACCEPT
     sudo iptables -A FORWARD -m state --state RELATED, ESTABLISHED -p udp --sport 53 -j ACCEPT
