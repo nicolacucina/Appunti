@@ -91,5 +91,43 @@ The bridge-netfilter code enables the following functionality:
 si possono creare le regole iptables utilizzando ebtables per filtrare traffico ethernet, saranno regole più semplici rispetto a quello di iptables perchè ci sono meno opzioni disponibili
 ma il funzionamento è lo stesso, se una trama ethernet matcha una regola viene fatto quanto specificato
 
+Alcuni esempi(da https://ebtables.netfilter.org/documentation/bridge-nf.html):
+
+Basic Config:
+    ebtables -P FORWARD DROP
+    ebtables -A FORWARD -p IPv4 -j ACCEPT
+    ebtables -A FORWARD -p ARP -j ACCEPT
+    ebtables -A FORWARD -p LENGTH -j ACCEPT
+    ebtables -A FORWARD --log-level info --log-ip --log-prefix EBFW
+    ebtables -P INPUT DROP
+    ebtables -A INPUT -p IPv4 -j ACCEPT
+    ebtables -A INPUT -p ARP -j ACCEPT
+    ebtables -A INPUT -p LENGTH -j ACCEPT
+    ebtables -A INPUT --log-level info --log-ip --log-prefix EBFW
+    ebtables -P OUTPUT DROP
+    ebtables -A OUTPUT -p IPv4 -j ACCEPT
+    ebtables -A OUTPUT -p ARP -j ACCEPT
+    ebtables -A OUTPUT -p LENGTH -j ACCEPT
+    ebtables -A OUTPUT --log-level info --log-ip --log-arp --log-prefix EBFW -j DROP
+
+
+anti-spoofing rules:
+
+    ebtables -A FORWARD -p IPv4 --ip-src 172.16.1.4 -s ! 00:11:22:33:44:55 -j DROP
+
+This is an anti-spoofing filter rule. It says that the computer using IP address 172.16.1.4 has to be the one that uses ethernet card 00:11:22:33:44:55 to send this traffic.
+Note: this can also be done using iptables. In iptables it would look like this:
+
+    iptables -A FORWARD -s 172.16.1.4 -m mac ! --mac-source 00:11:22:33:44:55 -j DROP
+
+The difference is that the frame will be dropped earlier if the ebtables rule is used, because ebtables inspects the frame before iptables does. Also note the subtle difference in what is considered the default type for a source address: an IP address in iptables, a MAC address in ebtables.
+
+If you have many such rules, you can also use the among match to speed up the filtering.
+
+    ebtables -N MATCHING-MAC-IP-PAIR
+    ebtables -A FORWARD -p IPv4 --among-dst 00:11:22:33:44:55=172.16.1.4,00:11:33:44:22:55=172.16.1.5 \ -j MATCHING-MAC-IP-PAIR
+
+We first make a new user-defined chain MATCHING-MAC-IP-PAIR and we send all traffic with matching MAC-IP source address pair to that chain, using the among match. The filtering in the MATCHING-MAC-IP-PAIR chain can then assume that the MAC-IP source address pairs are correct.
+
 
 Per capire se funziona tutto basta vedere se il filtraggio delle trame layer 2 ha effetto sulla navigazione del client
