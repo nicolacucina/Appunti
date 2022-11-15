@@ -5,7 +5,7 @@ Utilizziamo questo attacco per testare le nostre configurazioni e come possiamo 
 
 Configurazione di rete:
  ________________________________
-|                    bridge     _|
+|                    (bridge)   _|
 |  C1----(lab)----R------------|_|<-NIC
 |                               ||
 |              C2---------------||

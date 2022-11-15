@@ -4,8 +4,8 @@ funziona sia con uno switch che con un router virtuale.
 
 Configurazione di rete
  ________________________________
-|                    bridge     _|
-|  C1-----lab-----R------------|_|<-NIC
+|                    (bridge)   _|
+|  C1----(lab)----R------------|_|<-NIC
 |                               ||
 |              C2---------------||
 |_Host OS________________________|
@@ -84,142 +84,122 @@ Se voglio salvare in un file i vari filtraggi che vado a definire devo aggiunger
 
 Per installare il modulo di iptables che permette di esportare le statistiche del traffico in formato NetFlow è consigliabile prima aggiornare l’elenco dei package:
 
-sudo apt update
+    sudo apt update
 
 poi istallare il modulo vero e proprio con il comando:
 
-sudo apt install iptables-netflow-dkms
+    sudo apt install iptables-netflow-dkms
 
 Questo comando istalla un modulo del kernel, ipt_NETFLOW, che poi va caricato manualmente tramite il comando
 
-sudo modprobe ipt_NETFLOW destination=<IP>:<porta>
+    sudo modprobe ipt_NETFLOW destination=<IP>:<porta>
 
 dove <IP> rappresenta l’indirizzo IP del collettore di statistiche e <porta> la porta di strato 4 su cui il collettore è in ascolto. La configurazione di default prevede l’uso della porta 2055. La versione di NetFlow utilizzata è la v5. Per cambiare versione o aggiungere altre opzioni, tipo l’esportazione orientata ai nodi che agiscono da NAT, si può usare la versione v9 o ipfix:
 
-sudo modprobe ipt_NETFLOW destination=<IP>:<porta> protocol=9 natevents=1
+    sudo modprobe ipt_NETFLOW destination=<IP>:<porta> protocol=9 natevents=1
 
 Per configurazioni più avanzate, una trattazione dettagliata è disponibile alla pagina https://github.com/aabc/ipt-netflow.
 
-
 Una volta che il modulo del kernel è stato caricato, è necessario usare iptables per indicare di quale traffico si vogliono esportare le statistiche. Per far questo è necessaria una regola della tabella mangle. Ad esempio, se si vuole tracciare tutto il traffico che attraversa il nodo che risponde ai criteri elencati in <matching-criteria>, il comando da dare è il seguente
 
-sudo iptables -I FORWARD <matching-criteria> -j NETFLOW
+    sudo iptables -I FORWARD <matching-criteria> -j NETFLOW
 
 Si consiglia di mettere tale regola al primo posto (-I FORWARD) in modo tale da intercettare tutto il traffico, anche quello che poi potrà subire modifiche a causa di altre regole seguenti.
 
 Le statistiche di utilizzo di NetFlow sono disponibili nel file:
 
-/proc/net/stat/ipt_netflow
+    /proc/net/stat/ipt_netflow
 
 mentre le statistiche relative ai flussi sono disponibili nel file:
 
-/proc/net/stat/ipt_netflow_flows
+    /proc/net/stat/ipt_netflow_flows
 
 Tali file possono essere facilmente ispezionati con il comando
 
-cat <nome-file>
-
+    cat <nome-file>
 
 Per istallare il collettore delle statistiche, prima di tutto è necessario scegliere il nodo. Può essere lo stesso nodo oppure può essere un nodo esterno, anche remoto. Sul nodo scelto, aggiornare prima la lista dei package e poi installare il pacchetto nfdump
 
-sudo apt install nfdump
+    sudo apt install nfdump
 
 Il pacchetto nfdump contiene 2 moduli, nfcapd, che è il vero e proprio collettore, e nfdump.
 
 Il collettore nfcapd ascolta di default sulla porta 2055. Si può verificare che effettivamente la porta è aperta attraverso netstat o nmap:
 
-netstat -n –udp --listen
+    netstat -n –udp --listen
 
 Per configurare il servizio in modo diverso, è possibile editare il file
 
-/lib/systemd/system/nfdump.service
+    /lib/systemd/system/nfdump.service
 
 Prima però è necessario abilitare il servizio e stopparlo:
 
-sudo systemctl enable nfdump.service
+    sudo systemctl enable nfdump.service
 
-sudo systemctl stop nfdump.service
+    sudo systemctl stop nfdump.service
 
 Una volta fatte le modifiche, è possibile riavviare il demone del servizio
 
-sudo systemctl daemon-reload
+    sudo systemctl daemon-reload
 
-sudo systemctl start nfdump.service
-
- 
+    sudo systemctl start nfdump.service
 
 I dati ricevuti sono disponibili in formato binario nella cartella /var/cache/nfdump.
 
 È possibile consultare i log in /var/log/syslog
 
-tail -100 /var/log/syslog |grep nfcapd
-
- 
+    tail -100 /var/log/syslog |grep nfcapd
 
 Per ispezionare i dati relativi ai flussi in formato non binario, è necessario usare nfdump:
 
-nfdump -R /var/cache/nfdump
-
- 
+    nfdump -R /var/cache/nfdump
 
 Per ordine in base al tempo di inizio del flusso:
 
--O start
+    -O start
 
 Aggregare i flussi in modo bidirezionale:
 
--B
+    -B
 
 Scrivere l’output su un file csv per esportare i dati
 
--o csv
+    -o csv
 
 Per ispezionare un file specifico
 
-nfdump -r /var/cache/nfdump/nfcapd.<stringa-data>
+    nfdump -r /var/cache/nfdump/nfcapd.<stringa-data>
 
 L’opzione -I permette di avere delle statistiche cumulative e non per flusso
 
-nfdump -I -r /var/cache/nfdump/nfcapd.<stringa-data>
+    nfdump -I -r /var/cache/nfdump/nfcapd.<stringa-data>
 
 Con l’opzione -R + nome file si vedono tutti i file a partire da quello indicato tranne quello che viene scritto al momento (nfcapd.current.<number>)
 
-nfdump -R /var/cache/nfdump/nfcapd.<stringa-data>
-
- 
+    nfdump -R /var/cache/nfdump/nfcapd.<stringa-data>
 
 E’ possibile usare filtri stile tcpdump per fare analisi del traffico più mirata tra apici singoli (‘ filtro ‘)
 
-nfdump -r /var/cache/nfdump/nfcapd.<stringa-data>  ‘host 6.6.6.6 and proto tcp and dst port 443’
-
- 
+    nfdump -r /var/cache/nfdump/nfcapd.<stringa-data>  ‘host 6.6.6.6 and proto tcp and dst port 443’
 
 Con l’opzione -o extended è possibile aggiungere colonne con statistiche relative ai bps, con -n x è possibile visualizzare i top x secondo la metrica specificata da -O (ad esempio bps o bytes o bpp)
 
-nfdump -r /var/cache/nfdump/nfcapd.<stringa-data> -n 10 -O bps -o extended
-
- 
+    nfdump -r /var/cache/nfdump/nfcapd.<stringa-data> -n 10 -O bps -o extended
 
 L’opzione -A permette di aggregare i flussi su base filtro
 
-nfdump -r /var/cache/nfdump/nfcapd.<stringa-data> -A srcip ‘host 8.8.4.4’ #aggrega per indirizzi ip, fa vedere i flussi in entrambe le direzioni
-
- 
+    nfdump -r /var/cache/nfdump/nfcapd.<stringa-data> -A srcip ‘host 8.8.4.4’ #aggrega per indirizzi ip, fa vedere i flussi in entrambe le direzioni
 
 Per visualizzare le statistiche relative ai flussi che utilizzano la porta 443 relative sia a bps sia per indirizzo mittente sia per indirizzo destinatario si può usare il comando
 
-nfdump -r /var/cache/nfdump/nfcapd.<stringa-data> -s srcip/bps -s dstip/bps ‘port 443’
-
- 
+    nfdump -r /var/cache/nfdump/nfcapd.<stringa-data> -s srcip/bps -s dstip/bps ‘port 443’
 
 Per anonimizzare il traffic prima dell’esportazione, generare una chiave da 32 caratteri ed usare il comando
 
-nfanon -K <chiave> -r /var/cache/nfdump/nfcapd.<stringa-data>
-
- 
+    nfanon -K <chiave> -r /var/cache/nfdump/nfcapd.<stringa-data>
 
 Per filtrare in base alla fascia oraria usar e l’opzione -t
 
- nfdump -r /var/cache/nfdump/nfcapd.<stringa-data> -t <tempo-inizio>-<tempo-fine> ‘ filtro ‘
+    nfdump -r /var/cache/nfdump/nfcapd.<stringa-data> -t <tempo-inizio>-<tempo-fine> ‘ filtro ‘
 
 dove <tempo-inizio> è del tipo 2022/10/27/08:43:21
