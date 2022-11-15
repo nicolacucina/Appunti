@@ -3,16 +3,22 @@ C2 opera da collettore per le statistiche netflow esportate dalla middlebox che 
 funziona sia con uno switch che con un router virtuale.
 
 Configurazione di rete
- ________________________________
-|                    (bridge)   _|
-|  C1----(lab)----R------------|_|<-NIC
-|                               ||
-|              C2---------------||
-|_Host OS________________________|
+ __________________________________
+|                                 _|
+|C1----(lab)----R----(bridge)----|_|<-NIC
+|                                 ||
+|               C2----(bridge)----||
+|_Host OS__________________________|
 
 ///////////////////////////////////////////////////////////////////////////////
     CONFIG MIDDLEBOX
 ///////////////////////////////////////////////////////////////////////////////
+
+Si comincia tirando su il router come al solito, quindi abilitando forward ip tra le porte e natting.(Controllare che i client C1 e C2 abbiano i file /etc/netplan/00-installer-config.yaml ben impostati, io avevo il C1 con una interfaccia di troppo nel file che dava problemi).
+
+Se si usa la macchina debian ISN c'è da controllare se le porte si configurano con i doppi indirizzi, nel caso usare:
+    sudo service networking restart
+Per riavviare tutto e dovrebbe buttare via le doppie config, altrimenti uso dhclient -r e -v
 
 Si installa il pacchetto iptables-netflow-dkms con il comando:
     
@@ -20,18 +26,27 @@ Si installa il pacchetto iptables-netflow-dkms con il comando:
 
 netflow dkms serve a generare le statische netflow, si carica con il comando:
 
-    sudo modprobe ipt_NETFLOW destination=127.0.0.1:2055
+Si passa all'utente root(forse non serve ma ho fatto cosi e funziona):
+    sudo su -
 
-il comando, oltre a caricare il modulo, serve a specificare quale sia il collettore che riceverà i dati netflow, 
-l'IP qua è il loopback perchè sarà lo switch stesso a fare da collettore(o lo switch o il pc che fa da host system, uno dei due), la porta da usare è il 2055
+Si specificano delle opzioni prima di caricare il modulo:
+    echo options modprobe ipt_NETFLOW destination=<Ip del collettore>:2055 <protocol=9 natevents=1 > /etc/modprobe.d/netflow.conf> 
 
-See, you may add options in insmod/modprobe command line, or add them in /etc/modprobe.conf or /etc/modprobe.d/ipt_NETFLOW.conf like thus:
+il comando, oltre a caricare il modulo, serve a specificare quale sia il collettore che riceverà i dati netflow. 
+Quello che è tra <> alla fine sono comandi opzionali non visti in laboratorio ma che ho trovato online, teoricamente non sono necessari ma andrebbe controllato
 
-    options ipt_NETFLOW destination=127.0.0.1:2055 protocol=9 natevents=1
+Dopo aver definito le options, si carica il modulo:
+    modprobe ipt_NETFLOW
 
-Dalla pagina GitHub di ipt-netflow https://github.com/aabc/ipt-netflow
+Posso poi verificare se tutto è andato a buon fine con:
+    sysctl -a | grep net.netflow
+    sysctl net.netflow
+    cat /proc/net/stat/ipt_netflow
+    netstat -anpl | grep 2055
 
-Dato che intendiamo utilizzare un Collettore ESTERNO, va specificato l'indirizzo IP del collettore
+le line sysctl servono a capire con quali impostazioni è stato caricato il modulo,
+il file /proc/net/stat/ipt_netflow mostra i flussi provenienti dalla Middlebox(se si lancia a questo punto dovrebbe essere vuoto se non si è toccato il client C1).
+il comando netstat ci dice se la connessione col collettore è andata a buon fine, dovremmo vedere ESTABLISHED
 
 Per inviare traffico al collettore Netflow devo creare regole specifiche:
 	
@@ -44,20 +59,30 @@ si vuol mettere la regola in posizione 1 come segue:
 
     iptables -I FORWARD 1 -j NETFLOW
 
-Qui finisce la configurazione della middlebox, se voglio vedere i flussi netflow dalla middle uso il comando:
-    sudo cat /proc/net/stat/ipt_netflow_flows
+Con queste 3 regole praticamente posso vedere tutti i flussi che passano per la middlebox
 
 ///////////////////////////////////////////////////////////////////////////////
     CONFIG COLLETTORE
 ///////////////////////////////////////////////////////////////////////////////
 
-installare il pacchetto net-tools, tramite il comando: 
+Installare il pacchetto net-tools, tramite il comando: 
+    sudo apt install net-tools
+
+Poi lanciare il comando:
     sudo netstat -n --udp --listen 
 
 Verifico se il collettore è in ascolto, devo capire se la porta 2055 che intendo utilizzare per l'esportazione del traffico è disponibile
 
 A questo punto dovrebbe essere tutto collegato, la middlebox esporta le statistiche netflow e il collettore le elabora
-Per vedere cosa arriva al collettore si vanno a vedere alcuni file:
+
+Per vedere cosa arriva al collettore posso lanciare il comando:
+
+    tcpdump port 2055 -e -n
+
+Catturo direttamente cosa arriva alla porta specificata, se vedo arrivare qualcosa vuol dire che sta funzionando.
+I comandi che seguono servono a fare qualcosa di più sofisticato
+
+Altrimenti si vanno a vedere alcuni file:
     cd /var/cache/nfdump/
     ls 
 

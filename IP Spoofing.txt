@@ -4,12 +4,13 @@ Da Wikipedia:
 Utilizziamo questo attacco per testare le nostre configurazioni e come possiamo impostare i firewall per combatterli.
 
 Configurazione di rete:
- ________________________________
-|                    (bridge)   _|
-|  C1----(lab)----R------------|_|<-NIC
-|                               ||
-|              C2---------------||
-|_Host OS________________________|
+ __________________________________
+|                                 _|
+|C1----(lab)----R----(bridge)----|_|<-NIC
+|                                 ||
+|               C2----(bridge)----||
+|_Host OS__________________________|
+
 
 In questo caso C1 invia pacchetti a C2 fingendosi un altro nodo per trickare C2 in un comportamento non desiderato.
 C1 e C2 sono in due reti diverse (separate dal router R) per simulare un attacco dalla rete, con una semplificazione:
@@ -76,12 +77,14 @@ Chiaramente le regole vanno fatte in base a quali sono gli indirizzi Ip utilizza
 Per bloccare lo spoofing di C2 dovrei usare indirizzi Ip della sua sottorete, che nel nostro caso sono gli indirizzi Ip del laboratorio dato che C2 è bridgiato
 
 Se passiamo alla configurazione con lo switch virtuale, cambia qualcosa?
- _____________________________________
-|                           (bridge)_|
-|  C1--(lab1)--S--(lab)----R-------|_|<-NIC
-|                                   ||
-|                  C2---------------||
-|_Host OS____________________________|
+
+
+ ___________________________________________
+|                                          _|
+|C1---(lab1)---S---(lab)---R---(bridge)---|_|<-NIC
+|                                          ||
+|                        C2----(bridge)----||
+|_Host OS___________________________________|
 
 In realtà no, possiamo utilizzare sia le regole iptables nel router che nello switch, abbiamo la possibilità di scegliere Firewalling "Classico" o Trasparente.
 
@@ -104,3 +107,6 @@ sudo iptables -P FORWARD DROP
 
 Vogliamo che le entry siano generate solo se dai client interni alla rete, mentre dall'esterno accettiamo pacchetti solo legati a dei flussi già esistenti.
 Nel caso di r2l però dobbiamo distiguere il caso in cui il Nat sia presente e quello in cui non sia presente, in quanto c'è da considerare l'effetto della trasformazione degli indirizzi Ip
+
+Affinchè C2 sia in grado di contattare C1(assumiamo che ne conosca l'Ip privato), va aggiunta alla tabella di routing una entry specifica per indicare dove rilanciare i pacchetti:
+    sudo ip route add 10.10.10.0/24 via <ip dell'interfaccia del router che sta nella stessa rete con C2>

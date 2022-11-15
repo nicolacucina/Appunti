@@ -72,8 +72,11 @@ Ora serve abilitare il passaggio dei pacchetti tra le interfacce tramite il coma
 Infine si abilita il Natting con: 
     sudo iptables -t nat -A POSTROUTING -o enp0s3 -j MASQUERADE
 
-la flag -o enp0s3 indica "il verso" del natting, in questo caso gli ip proveniente dalla rete privata vengono convertiti in pubblici, ma quelli pubblici invece non vengono convertiti in privati.
-Se non si fosse specificata questa flag il nat sarebbe avvenuto in entrambe le direzioni
+la flag -o enp0s3 indica "il verso" del natting(l'interfaccia di uscita del traffico), in questo caso gli ip proveniente dalla rete privata vengono convertiti in pubblici, ma quelli pubblici invece non vengono convertiti in privati.
+Se non si fosse specificata questa flag il nat sarebbe avvenuto in entrambe le direzioni.
+
+"Il Source NAT si ha quando si ha necessità di cambiare l'indirizzo IP sorgente. SNAT deve essere eseguito in fase di post-routing,
+un attimo prima che il pacchetto venga trattato dal processo di routing pronto per essere immesso sulla rete."
 
 Per vedere se tutto è andato a buon fine, serve aprire una nuova VM client con una sola scheda di rete collegata alla rete privata "lab".
 Se questo client ha una config ip valida con quella fornita dal server dhcp e riesce a navigare in internet, funziona tutto

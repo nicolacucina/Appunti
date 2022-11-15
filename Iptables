@@ -11,7 +11,7 @@ In particolare va guardato il funzionamento delle tables e delle chain, perchè 
 va poi considerata la chain di FORWARD, ad esempio nel caso dei ping, se blocco solo chain input non accetto ping, ma li posso ancora creare ed inviare ad altri.
 
 Abilitare la funzionalità di Natting:
-    sudo iptables -t NAT -A POSTROUTING -o <interface> -j MASQUERADE    #l'interfaccia serve a specificare dove effettuare la traduzione degli indirizzi, senza la flag -o il Natting è bidirezionale
+    sudo iptables -t nat -A POSTROUTING -o <interface> -j MASQUERADE    #l'interfaccia serve a specificare dove effettuare la traduzione degli indirizzi, senza la flag -o il Natting è bidirezionale
 
 Cancellare regole:
     sudo iptables <-t TABLE> -D <CATENA> #numero regola
