@@ -69,11 +69,14 @@ perciò abilitiamo il traffico tcp con destination port la 80 e la 443, le porte
 
 Le regole senza la flag -s servono per permettere alle risposte dei server web di arrivare ai client (traffico nel verso opposto),
 perciò saranno pacchetti tcp provieneti dalle porte 80 e 443.
+Se non specificassi ilo source ip per considerare solo la mia sottorete, non risolvo nulla
 
 Le regole che riguardano la porta 53 sono invece utilizzati dal DNS.
 
 In questo modo il paccheto pkt creato in scapy viene droppato dal firewall, dato che l'indirizzo ip non appartiene al blocco 10.10.10.0/24.
+
 Chiaramente le regole vanno fatte in base a quali sono gli indirizzi Ip utilizzati nelle varie sotto-reti, usando 10.10.10.0/24 blocco lo spoofing su C1,
+
 Per bloccare lo spoofing di C2 dovrei usare indirizzi Ip della sua sottorete, che nel nostro caso sono gli indirizzi Ip del laboratorio dato che C2 è bridgiato
 
 Se passiamo alla configurazione con lo switch virtuale, cambia qualcosa?
@@ -87,13 +90,17 @@ Se passiamo alla configurazione con lo switch virtuale, cambia qualcosa?
 |_Host OS___________________________________|
 
 In realtà no, possiamo utilizzare sia le regole iptables nel router che nello switch, abbiamo la possibilità di scegliere Firewalling "Classico" o Trasparente.
-
+Per far funzionare le regole scritte sopra, caricare il modulo:
+    sudo modprobe br netfilter
 
 Un ulteriore passaggio che possiamo fare è bloccare l' r2l, Remote to Local, ovvero evitare che dall'esterno sia possibile accedere ai nodi interni alla rete.
 Questo aiuta sia a prevenire lo spoofing che altri attacchi.
 
 In questo caso vogliamo evitare che C2 sia in grado di contattare C1 autonomamente, vogliamo che C2 possa parlare con C1 SOLO se C1 ha cominciato la conversazione.
 Il Natting da solo non basta, aiuta a mascherare gli Ip della rete interna ma non blocca questo attacco.
+
+Affinchè C2 sia in grado di contattare C1(assumiamo che ne conosca l'Ip privato), va aggiunta alla tabella di routing una entry specifica per indicare dove rilanciare i pacchetti:
+    sudo ip route add 10.10.10.0/24 via <ip dell'interfaccia del router che sta nella stessa rete con C2>
 
 In questo caso passiamo al STATEFUL FIREWALLING, il firewalling visto prima è stateless, ci sono delle regole statiche e si vede quali matchano i pacchetti.
 Nel firewalling Stateful creiamo delle entry per le varie connessioni, specificandolo nelle regole iptables:
@@ -108,5 +115,3 @@ sudo iptables -P FORWARD DROP
 Vogliamo che le entry siano generate solo se dai client interni alla rete, mentre dall'esterno accettiamo pacchetti solo legati a dei flussi già esistenti.
 Nel caso di r2l però dobbiamo distiguere il caso in cui il Nat sia presente e quello in cui non sia presente, in quanto c'è da considerare l'effetto della trasformazione degli indirizzi Ip
 
-Affinchè C2 sia in grado di contattare C1(assumiamo che ne conosca l'Ip privato), va aggiunta alla tabella di routing una entry specifica per indicare dove rilanciare i pacchetti:
-    sudo ip route add 10.10.10.0/24 via <ip dell'interfaccia del router che sta nella stessa rete con C2>
