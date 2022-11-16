@@ -81,7 +81,6 @@ Per bloccare lo spoofing di C2 dovrei usare indirizzi Ip della sua sottorete, ch
 
 Se passiamo alla configurazione con lo switch virtuale, cambia qualcosa?
 
-
  ___________________________________________
 |                                          _|
 |C1---(lab1)---S---(lab)---R---(bridge)---|_|<-NIC
@@ -93,7 +92,10 @@ In realtà no, possiamo utilizzare sia le regole iptables nel router che nello s
 Per far funzionare le regole scritte sopra, caricare il modulo:
     sudo modprobe br netfilter
 
-Un ulteriore passaggio che possiamo fare è bloccare l' r2l, Remote to Local, ovvero evitare che dall'esterno sia possibile accedere ai nodi interni alla rete.
+
+
+
+Un ulteriore passaggio che possiamo fare è bloccare l' r2l, Remote to Local(un pò improprio ma vabe), ovvero evitare che dall'esterno sia possibile accedere ai nodi interni alla rete.
 Questo aiuta sia a prevenire lo spoofing che altri attacchi.
 
 In questo caso vogliamo evitare che C2 sia in grado di contattare C1 autonomamente, vogliamo che C2 possa parlare con C1 SOLO se C1 ha cominciato la conversazione.

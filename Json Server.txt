@@ -1,0 +1,71 @@
+Installazione del web server https://github.com/typicode/json-server
+
+Configurazione di rete:
+ __________________________________
+|                                 _|
+|C1----(lab)----R----(bridge)----|_|<-NIC
+|                                 ||
+|               C2----(bridge)----||
+|_Host OS__________________________|
+
+C1 funge da server che ospita il server mentre C2 è il client che vuole accedere
+
+///////////////////////////////////////////////////////////////////////////////
+    Config C2
+///////////////////////////////////////////////////////////////////////////////
+
+Installare il server con i seguenti comandi:    
+    sudo apt install npm
+    sudo npm install -g json-server
+
+Creare un file json che verrà utilizzato dal server:
+    nano test.json
+
+Essendo un file Json va formattato per bene, dove le {} rappresentano un oggetto json, le [] degli array, poi abbiamo associazioni chiave valore tramite i :
+
+{
+    "dati": [
+        {"id": 1, "temp": 34, "umidity": 55 },
+        {"id": 10, "temp": 34, "umidity": 55 },
+        {"id": 19, "temp": 34, "umidity": 55 },
+        {"id": 12, "temp": 34, "umidity": 55 },
+        {"id": 111, "temp": 34, "umidity": 55 },
+        {"id": 199, "temp": 34, "umidity": 55 },
+        {"id": 103, "temp": 34, "umidity": 55 },
+        {"id": 20, "temp": 34, "umidity": 55 },
+        {"id": 33, "temp": 34, "umidity": 55 },
+        {"id": 40, "temp": 34, "umidity": 55 },
+        {"id": 50, "temp": 34, "umidity": 55 }        
+    ],
+    "dati2":
+        {"id": 66, "name": "ins"}
+}
+
+Si lancia il server:
+    json-server -w mauro.json -H <IP del server>
+L'ip in questo caso sarà l'ip della rete privata in cui è posizionato il server.
+Se non specificato altrimenti, il server ascolta sulla porta 3000
+
+A questo punto per verificare che il server sia funzioante, dal server stesso apriamo il browser e ci connettiamo a http://<ip del server>:3000
+Se tutto funziona viene aperta una pagina web che mostra i vari json che abbiamo creato.
+
+///////////////////////////////////////////////////////////////////////////////
+    Config Router
+///////////////////////////////////////////////////////////////////////////////
+
+Configurare la macchina Debian ins per funzionare come router tramite:
+    sudo bash router.sh
+
+Inoltre se le interfacce sono malconfigurate con un indirizzo di autoconfig del tipo 169.254.x.x, fare:
+    sudo service networking restart
+
+Aiuta a far funzionare le configurazioni per bene.
+
+Il sito web dovrebbe essere accessibile dal router tramite l'interfaccia enp0s8, sempre utilizzando il browser.
+
+Solo il client esterno alla rete non può ancora accedere al servizio, è necessaria una regola di natting particolare da inserire nel router:
+    sudo iptables -t nat -A PREROUTING -p tcp -d <Ip della interfaccia enp0s3 del router> --dport 80 -j DNAT --to-destination <Ip del server nella rete privata>:3000
+
+In questo modo, qualsiasi client che dall'esterno vuole accedere al server, dovrà utilizzare l'ip dell'interfaccia enp0s3 del router e la porta 80.
+La regola di prerouting viene utilizzata appunto prima che il pacchetto venga instradato tramite le varie tabelle di routing, e andando a tradurre l'indirizzo di destinazione in quello del server,
+il router saprà instradare il pacchetto verso il router tramite l'interfaccia enp0s8, facendo funzionare tutto
