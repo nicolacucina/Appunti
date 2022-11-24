@@ -1,0 +1,188 @@
+Classificazione del Traffico
+
+Il Dataset di esempio è mgmt_bin.csv:
+
+	proto,data_size,dest_port,dest_ip,label
+	0,0,0,0,no
+	0,0,0,1,no
+	1,0,0,0,yes
+	2,1,0,0,yes
+	2,2,1,0,yes
+	2,2,1,1,no
+	1,2,1,1,yes
+	0,1,0,0,no
+	0,2,1,0,yes
+	2,1,1,0,yes
+	0,1,1,1,yes
+	1,1,0,1,yes
+	1,0,1,0,yes
+	2,1,0,1,no
+	0,0,1,1,no
+
+dove si è utilizzata la seguente codifica:
+protocol: tcp -> 0, icmp -> 1, udp -> 2
+data_size: large -> 0, mild -> 1, low -> 2
+dest_port: well-known -> 0, other -> 1
+dest_ip: internal -> 0, external -> 1
+
+Come algoritmo di classificazione si utilizza il Decision Tree, dove si utilizza il concetto di Entropia
+per determinare quali sono le features più informative.
+	
+E(P)^
+   1|      __--------__
+	|	  /            \
+	|    /              \
+	|   /                \
+	|  /                  \
+	| /                    \
+	|/                      \
+	|--------------------------->(P)
+	0						 1 
+
+L'Entropia è legato al concetto di probabilità e certezza, l'entropia è massima quando l'incertezza è massima, mentro abbiamo entropia nulla quando c'è certezza.
+
+D = Dataset
+A = Attributi
+P(w_j) = Probabilità che un campione appartenga ad una certa classe, stimata a partire dal dataset come num.occorrenze di un classe/num.totale campioni 
+D(v) = Dataset dove l'attributo A assume il valore v
+i(D(v)) = incertezza associata al Dataset D(v), numericamente è uguale all'entropia
+
+Entropia del Dataset E(D)= -Σ (P(w_j) * log2(P(w_j)))
+						(j∈Dataset) 
+ 
+Guadagno G(D, A) = E(D) -Σ (|D(v)| / |D|) * i(D(v))
+		           (v∈values(A))
+
+Per poter svolgere questi calcoli possiamo usare MatLab, Octave o Python, linguaggi adatti per questo genere di task
+Utilizziamo moltiplicazioni tra matrici per poter calcolare quelle somme di prodotti come prodotti scalari
+Qui è riportata la funzione scritta in MatLab ma negli altri linguaggi cambia poco.
+In MatLab l'apice ' indica la trasposizione, cosi da fare un prodotto matriciale tra un vettore riga 2x1 e un vettore colonna 1x2 per ottenere uno scalare
+
+function h=entropia(a,b)
+p=[a,b]/(a,b);
+
+if p(1)==0
+	h=0;
+elseif p(1)==1
+	h=0;
+else
+	h=-p * (log2(p))';
+end
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%	istruzioni dalla command window di MatLab
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+ep = entropia(9,6) %entropia di partenza del dataset
+
+				%tcp					%icmp				%udp
+g_proto = ep - (6/15*entropia(2,4) + 4/15*entropia(4,0) + 5/15*entropia(3,2))
+
+				%large					%mild				%low
+g_d_size = ep - (5/15*entropia(2,3) + 6/15*entropia(4,2) + 4/15*entropia(3,1))
+
+				%well-known				%other
+g_d_port = ep - (7/15*entropia(3,4) + 8/15*entropia(6,2))
+
+				%internal				%external
+g_d_ip = ep - (8/15*entropia(6,2) + 7/15*entropia(3,4))
+
+Confrontiamo i guadagni legati ai vari attributi per scegliere l'attributo più informativo
+in modo da ridurre l'entropia il più possibile ed avvicinarci ad una certezza
+ovvero a quale classe appartiene il campione che vogliamo classificare
+
+Non sono riportati i risultati, ma per quanto riguarda questa prima scelta, l'attributo più informativo è il protocollo
+Perciò alla root del nostro albero decisionale sarà associata questa feature, in base al valore assunto ci sposteremo per l'albero
+
+%ramo tcp
+e_tcp = entropia(2,4)
+
+						%large				%mild				%low
+g_tcp_d_size = e_tcp - (3/6*entropia(0,3) + 2/6*entropia(1,1) + 1/6*entropia(1,0))
+
+						%well-known			%other
+g_tcp_d_port = e_tcp - (3/6*entropia(0,3) + 3/6*entropia(2,1))
+
+						%internal			%external
+g_tcp_d_ip = e_tcp - (3/6*entropia(1,2) + 3/6*entropia(1,2))
+
+Qua la feature più informativa è la dimensione del flusso, perciò al nodo figlio della root lungo il ramo tcp viene associata la feature data_size
+
+I rami large e low non richiedono calcoli aggiuntivi in quanto si raggiunge entropia nulla, una certezza nella classificazione,
+perchè tutti i campioni di train hanno la stessa label
+
+Rimane il ramo mild, ha entropia max 1
+
+							%other			%well-known
+g_tcp_mild_d_port = 1 - (1/2*entropia(1,0) + 1/2*entropia(0,1))
+							
+							%external		%internal
+g_tcp_mild_d_ip = 1 - (1/2*entropia(1,0) + 1/2*entropia(0,1))
+
+Entrambe le scelte andrebbero bene, portano la stessa informazione
+Il ramo icmp finisce direttamente in una classificazione dato che ha entropia associata nulla,
+mentre per il ramo udp risulta necessario utilizzare il dest_ip per arrivare alla certezza di classificazione
+
+Rispetto all'albero presente nelle slide che non sto qua a disegnare(per ora), l'aggiunta di un solo campione mostra
+l'instabilità dei Decision Tree, dato che la struttura è cambiata subito, mostrando anche come i Decision Tree tendano ad overfittare i dati.
+
+Tutti questi calcoli però possiamo evitarli utilizzando la libreria sklearn di python, dove è già definita la classe DecisionTree che pensa a tutto.
+
+////////////////////////////////////////////////////
+/		Jupiter Notebooks
+////////////////////////////////////////////////////
+
+Framework che tramite Anaconda permette di creare degli ambienti isolati di esecuzione di script python,
+utile quando si vogliono utilizzare librerie o versioni differenti di software in più script.
+Può essere utilizzato in una qualsiasi delle VM utilizzate fin'ora.
+
+Installare python:
+	sudo apt update
+	sudo apt install python3.11 # o una qualsiasi altra versione in base a quello che si vuole
+	
+Installare pip:
+	sudo apt install pipenv
+
+Installare Miniconda:
+scaricare l'installer da https://docs.conda.io/en/latest/miniconda.html#linux-installers, se si usa linux in macchina virtuale server Miniconda3 Linux 64-bit
+da terminale:
+	bash Miniconda3-latest-Linux-x86_64.sh
+Dopo l'installazione, chiudere e riaprire il terminale, se si vede scritto un (basic) prima del nome utente l'installazione è andata a buon fine
+
+Installare jupyter notebook:
+	conda install jupyter notebook
+
+Per avviare jupyter notebook basta scriverlo sul terminale.
+Viene aperta una interfaccia web sul brower, in alto a destra premere New -> python kernel
+
+Ora possiamo scrivere il nostro script python:
+
+import pandas as pd
+import numpy as np
+features=pd.read_csv(' percorso del file mgmt_bin.csv')
+print(features.shape)
+print(features.describe(), '\n')
+print(features.head(10))
+labels = np.array(features['label'])
+features = features.drop(['label'], axis=1)
+features = np.array(features)
+from sklearn.tree import DecisionTreeClassifier
+from sklearn import tree
+classifier = DecisionTreeClassifier(criterion='entropy', random_state=42)
+classifier.fit(features, labels)
+text_representation = tree.export_text(classifier)
+print(text_representation)
+header_names = ['protocol', 'data_size', 'dest_port', 'dest_ip']
+label_name = ['yes', 'no']
+import matplotlib.pyplot as plt
+fig = plt.figure(fig_size=(50,50))
+_ = tree.plt_tree(classifier, feature_names=header_names, class_names=label_names, filled=True)
+
+Per risolvere tutti gli import delle librerie, da terminale(non quello dove si è lanciato jupyter notebook),
+si usa pip:
+	pip install manager
+	pip install <nome del pacchetto>
+
