@@ -19,7 +19,7 @@ Modello FCAPS:
     -PERFORMANCE: misurare le prestazioni di dispositivi e della rete,
     -SECURITY: firewalling, gestione accesso interno-esterno della rete.
 
-Ci basiamo sulla pila protocollare TCP/IP e sui suoi pacchetti, i dati che utilizziamo nel management sono dei metadati che descrivono i pacchetti in maniera più compatti.
+Ci basiamo sulla pila protocollare TCP/IP e sui suoi pacchetti, i dati che utilizziamo nel management sono dei metadati che descrivono i pacchetti in maniera più compatta perchè non sono necessarie tutti campi degli header di ogni strato.
 
 3 'Piani' di lavoro:
     -Utente: dove passa la maggior parte del traffico dei servizi e delle app di rete,
@@ -41,4 +41,30 @@ Questa servizio lavora all'Application Layer.
 
 In questo caso si parla di architettura Client-Server, dove il Server è ospitato all'interno del dispositivo da configurare, sempre acceso e con indirizzi fissi, affinchè sia contattabile facilmente,
 mentre il client è il software di monitoraggio o configurare che interagisce con la componente, richiedendo informazioni o inviando una configurazione da utilizzare.
-L'architettura Client-Server prende anche il nome di Request-Response all'interno del network management, facendo riferimento al fatto che quando al client serve un qualcosa dal server, gliela 'chiede' e attende che il server 'risponda'
+L'architettura Client-Server prende anche il nome di Request-Response all'interno del network management, facendo riferimento al fatto che quando al client serve un qualcosa dal server, gliela 'chiede' e attende che il server 'risponda'.
+
+L'alternativa a questa schema è l'architettura Subscribe-Notify, in cui il client si 'iscrive' al server, così il server può continuare a lavorare senza essere rallentato da continue richieste e senza occupare banda,
+quando avviene qualcosa all'interno del server che va segnalato, invia una notifica a tutti gli iscritti.
+Nella Subscribe-Notify si invertono i ruoli, perchè sarà il software di monitoraggio a dover stare sempre acceso, in attesa delle notifiche provenienti dalle componenti di rete.
+
+Concetto di Socket: Analogo della porta del layer di Trasporto, è dove passano i pacchetti trasmessi e ricevuti dai processi(che lavorano all'application layer).
+Applicazione differenti saranno in ascolto su socket differenti, anche repliche di uno stesso processo utilizzano socket differenti per non confondere i dati.
+
+Protocolli di Trasposto della architettura TCP/IP:
+    -TCP: dato che da il nome alla pila protocollare, è facile capire che è il più importante perchè è il protocollo su cui si appoggia la maggior parte del traffico internet,
+    -UDP: l'altro protocollo di trasporto.
+
+La differenza dei protocolli deriva dai vantaggi che offrono:
+    TCP: Integrità dei dati, affidabilità, controllo di flusso, controllo di congestione, concetto di sessione
+    UDP: Semplicità
+
+Oltre a queste proprietà, siamo interessari anche alla Latenza, Portata e Sicurezza del protocollo.
+Sia TCP che UDP non offrono supporto nativo per la sicurezza, perciò viene inserito un ulteriore layer alla architettura(tra app. e transport layer), occupato dai protocolli SSL(Secure Socket Layer) e TLS(Transport Layer Secure).
+Per la latenza e banda possiamo fare qualcosa con TCP e il controllo di flusso e congestione ma dato che per tcp la connessione end2end è astratta, non riesce bene a gestire la faccenda, dato che non si sa a priori quanti e quali salti in rete verranno effettuati.
+
+Multiplexing/Demultiplexing: operazione di gestione della trasmissione e ricezione dei dati nella architettura TCP/IP.
+    -Per multiplexare i dati provenienti da più processi aggiungo l'header del protocollo di trasporto(distingue i dati),
+    -Per Demultiplexare, uso gli header per consegnare ai socket i dati associati.
+
+Dato che in UDP non c'è il concetto di sessione, questo processo di MUX/DEMUX contepla solo un processo in ascolto all'interno del server da contattare, quindi ho coppie porta WellKnown - porta Client
+In TCP invece ho coppie di socket mittente-ricevitore, perciò posso utilizzare più processi nei dispotivi per creare più connessioni.
