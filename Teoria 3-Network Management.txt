@@ -1,0 +1,151 @@
+All'interno delle reti troviamo centinaia o migliaia di dispositivi da dover monitorare, controllare e analizzare, in particolare si vuole: 
+    -Rilevare errori e FAULT di componenti,
+    -Monitorare host, dispositivi e traffico,
+    -Rilevare rapidi cambiamenti nelle tabelle di routing(per evitare che inizino a flippare),
+    -Monitorare le SLA, i termini d'uso dei servizi,
+    -Fare Intrusion Detection,
+    -Rispondere agli attacchi in maniera efficace,
+    -etc.
+
+Lo standard ISO definisce il Network Management in funzione delle 5 categorie FCAPS:
+    -Fault management,
+    -Config management,
+    -Accounting management,
+    -Performance Management,
+    -Security management.
+
+Il sistema di management opera come un sistema di controllo(schemi con ramo di feedback)
+
+Il mantra:
+
+        Analyze
+       /       \
+      /         \
+     /           \
+    /             \
+Observe----------React
+
+All'interno della nostra rete, abbiamo una serie di Managed Devices(router, switch e altre componenti). 
+All'interno dei devices si trovano Managed Objects, che rappresentano il comportamento(un aspetto) di una componente.
+Questi object sono gestiti da degli Agent, dei processi che sanno leggere i dati provenienti dal dispositivo e dagli Object e li salvano all'interno di un MIB, Management Information Base.
+Le informazioni che troviamo in questo database sono di sola lettura, dato che sono log, pacchetti inviati/ricevuti, funziona si/no, etc.
+Se non comunicano con il MIB, gli Agent fanno riferimento ad una Managing Entity, un manager che osserva la rete e in funzione delle informazioni ricevuti da prendere delle decisioni.
+
+Lo scambio di dati tra Agent, Manager e MIB fa uso di protocolli specifici per il management, i primi ad essere stati utilizzati furono CMIP(Common Management Information Protocol) e SNMP(Simple Network Management Protocol)
+
+il de facto standard utilizzato al momento è SNMP v3, nato come evoluzione di SGMP(Simple Gateway Management Protocol), vogliamo creare un MIB(un database) il più indipendente possibile dal protocollo utilizzato per crearlo.
+
+4 componenti fondamentali di SNMP:
+    -MIB: rete di database di dati eterogenei come contatori, range, valori booleani, stringhe, informazioni sullo stato, etc. ,
+    -SMI: Structure of Management Information, come sono definiti i dati, si occupa della creazione degli Object all'interno dei devices,
+    -SNMP: il protocollo utilizzato nello scambio di informazioni
+    -Sicurezza, supportata solo dalla versione 3
+
+SMI
+definisce la sintassi(come si scrivono) e la semantica(cosa significano) i dati. L'obiettivo è la non ambiguità dei dati.
+Tipi fondamentali di dati: numeri interi(signed o unsigned, 32 o 64 bit), stringhe, identificatori di oggetti, indirizzi ip, contatori(32 o 64 bit)
+OBJECT-TYPE: fanno riferimento ad un oggetto e ai suoi paramentri, coppie chiave valori tra object ip e object type
+MODULE-TYPE: oggetti simili sono raggruppati e gestiti da un modulo comune definito tramite SMI
+
+esempio 
+
+OBJECT-TYPE : ipInDelivers
+
+ipInDelivers OBJECT TYPE
+    SYNTAX      Counter32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION "The total number of input datagrams successfully delivered to IP user-protocols (including ICMP)"
+::={ip 9}
+
+Ora, come faccio a riconoscere gli OBJECT-TYPE in funzione del loro ID? è stata definita una convenzione gerarchica, ISO Object Identifier tree:
+
+            1.3.6.1.2.1.7.1 -> UDPInDatagrams(quanti pacchetti sono udp tra tutti quelli che sono arrivati)
+           / / /  | |  \ \ \
+        ISO / /   | |   \ \ UDPInDatagrams
+           / /    | |    \ \
+    ISO Org /     | |     \ UDP
+           /      | |      \
+     US DoD       | |       MIB2
+        Internet -| |- management 
+
+si parte dal più generale scendendo nei particolari, si parte dall'ente di standardizzazione, poi all'organizzazzione specifica di quell'ente, e via cosi,
+in generale, tutte le informazioni che ci interessano sono intentificate da oggetti che stanno nel sottoalbero 1.3.6.1.2.1, quindi per evitare di indicarla ogni volta si abbrevia con ::{},
+dove dentro alle graffe indico il sotto albero che mi interessa, guardando l'esempio sopra, una volta arrivati a 1.3.6.1.2.1, ip ha il codice 4, e dentro all'albero ip scelgo l'oggetto con id 9
+
+Anche in SNMP si possono usare gli schemi Request-Response e Trap(un subscribe-notify). Si appoggiano su UDP dato che se a seguito di una richiesta non ricevo il pacchetto, mi basta rifare la richiesta, molto easy.
+Nel caso delle trap, il Manager device configura delle Trap nei device, sono delle informazioni particolari che devono essere osservate, quando si verifica un certo evento si creare una notifica/allarme che viene inviata
+
+Tipologie di messaggi in SNMP:
+    GetRequest
+    GetNextRequest      tre tipologie di messaggi in cui il manager chiede agli agent una informazione
+    GetBulkRequest 
+
+    InformRequest       Messaggi scambiati tra manager per inviarsi ed aggiornare informazioni sui relativi MIB
+
+    SetRequest          il manager comunica all'agent un certo valore da utilizzare nella configurazione degli oggetti
+
+    Response            l'agent fornisce al manager cosa gli è stato chiesto
+
+    Trap                l'agent informa il manager dell'avvenimento di un evento
+
+Formato del pacchetto SNMP:
+
+    PDU Type , Request ID, Error Status, Error Index, {name: value, name: value, ...}
+
+    PDU Type, Enterprise, Agent Address, Trap Type, Specific Code, Timestamp, {name: value, name:value, ...}
+
+Sicurezza
+
+è possibile cifrare il traffico SNMP per non inviare tutte le info dei dispositivi in chiaro, si utilizza l'algoritmo DES(usa chiavi condivise, richiede quindi la configurazione)
+Si calcolano funzioni hash sul pacchetto utilizzando la chiave condivisa, il destinatario poi effettuerà l'operazione complementare per ottenere il pacchetto in chiaro.
+Si utilizzano nonce,  degli id unici o delle password utilizzabili una sola volta, l'idea è che se un attaccante cattura un pacchetto snmp(anche cifrato), potrebbe continuare ad inviarlo in loop,
+portando il manager device a creare che lo stato del managed device non stia cambiando. le nonce evitano questo perchè ogni pacchetto è 'unico', ha un identificatore utilizzabile una sola volta, 
+perciò se si reinvia un pacchetto con una nonce già usato, si scarta a priori.
+Inoltre c'è controllo su chi ha accesso a che cosa, sia ai singoli object nei device che all'interno MIB
+
+In SNMPv3 si parte dalle stesse basi ma c'è una evoluzione, si hanno più applicazioni/processi SNMP che gestiscono i vari aspetti del protocollo(generazione/ricezione di comandi, generazione/ricezione di notifiche, etc.).
+ognuno di questi processi comunica con dei moduli sottostanti(gestione accesso, sicurezza e simili) che creano il pacchetto finale da inviare al transport layer.
+Gli header rimangono simili anche se i campi cambiano per diventare più specifici.
+
+Problema sulla presentazione dei dati:
+manager, agent, objects, tutte le entità coinvolte in SNMP si devono concordare sulla rappresentazione dei dati da utilizzare.
+Abbiamo problemi più tecnici(tipo Little Endian vs Big Endian) e problemi di più alto livello.
+quello che si fa è passare per un layer di presentazione che offre una versione più astratta/generale dei dati da utilizzare, prende il nome di Abstract Syntax Notation.
+in ASN si usa il TLV(Type-Length-Value), ovvero si indica il tipo di dato(dentro il framework ASN), la lunghezza del dato in byte e infine il valore
+
+NETCONF
+se SNMP si può pensare come lo schema da utilizzare per analizzare/monitorare i dispositivi di rete, netconf offre un modo di configurare i dispostivi.
+si lavora con RPC, Remote Procedure Call, in cui si inviano pacchetti in formato XML tramite TLS/TCP, parlando di pacchetti di configurazione,
+è più importante che la config sia esatta(integra), quindi udp non può bastare(se arriva un pacchetto che contiene un errore e mi rovina la configurazione ho problemi).
+
+Architettura NETCONF
+
+    Content             Qua si generano i dati di configurazione che si vogliono utilizzare o i dati da includere in una notifica/allarme
+    Operation           si creano i comandi che 'mettono in pratica' la config
+    Messages            si creano/gestiscono i messaggi rpc
+    Secure transport
+    ...
+
+dato che netconf si appoggia su tcp, include il concetto di sessione al suo interno, dove si incontrano nuovamente gli schermi Request-Reply e Subscribe-notify
+Si deve sempre stabilire una sessione, poi al suo interno troveremo il traffico rpc(la richiesta) e rpc-reply
+
+Operazioni NETCONF
+
+    get-config              recupera i dati di una configurazione(un device può avere più profili di configurazione)
+    get                     recupera dati relativi allo stato di una componente
+    edit-config             modifica la configurazione del dispositivo
+    lock                    meccanismi per assicurare integrità della config, usando lock blocco altre sessioni netconf o snmp
+    unlock                  quando ho finito di fare, rilascio il dispositivo che potrà riaccettare altre richieste
+    create-subscription     
+    notification
+
+YANG: data modeling language, definisce i dati scambiati tramite il protocollo netconf, quindi definisce struttura, sintassi, semantica dei dati, l'equivalente dello SMI in SNMP.
+YANG però è indipendente da NETCONF, quindi è facilmente convertibile in altri formati di codifica dei dati come XML o JSON, proprietà utile sfruttata dalla evoluzione di NETCONF
+
+NETCONF -> RESTCONF
+rpc     -> REST API
+XML     -> JSON/YAML
+
+SNMP e NETCONF sono misure PASSIVE, ci permettono di collezionare statistiche aggregate sullo stato dei dispostivi ma non sempre è sufficiente.
+Questi protocolli lavorano su scale temporali dell'ordine del secondo o minuto, troppo lente per poter star dietro ad alcuni fenomeni di rete(alcuni attacchi durano solo qualche pacchetto processato nell'ordine dei microsecondi)

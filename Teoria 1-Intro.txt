@@ -1,10 +1,10 @@
 Intelligent and Secure Networks:
 Utilizzo di tecniche di Machine Learning e Intellingenza Artificiale per la gestione delle reti.
 
-Per noi una rete è una sistema autonomo in cui delle componenti interagiscono tra di loro; inizialmente poteva essere gestito 
-manualmente dal manager di rete, ma data l'evoluzione e l'esplosione di internet, occorre utilizzare tecniche più automatiche.
-Per questo il Network Management diventa una serie di procedure di integrazione e coordinamento tra hardware, software e utenti/operatori umani 
-al fine di monitorare, testare, configurare, analizzare e controllare una rete in Real Time per ottenere le performance richieste.
+Per noi una rete è una sistema autonomo in cui delle componenti interagiscono tra di loro.
+Inizialmente poteva essere gestito manualmente dal manager di rete, ma data l'evoluzione e l'esplosione di internet, occorre utilizzare tecniche più automatizzate.
+Per questo motivo il Network Management diventa una serie di procedure di integrazione e coordinamento tra hardware, software e utenti/operatori umani 
+al fine di monitorare, testare, configurare, analizzare e controllare una rete in Real Time per ottenere le performance e le specifiche richieste.
 
 Considereremo:
 -Rilevazione di errori, fallimenti o anomalie (come il malfunzionamento di router, switch, di un servizio e simili) e la correlazione di informazioni a disposizione per detectarli,

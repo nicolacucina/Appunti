@@ -1,0 +1,104 @@
+Si comincia da TCPDUMP, comando dei sistemi Unix che permette di interagire con il traffico da una interfaccia.
+Si possono effettuare operazione di cattura o filtraggio del traffico.
+
+Sintassi del comando:
+    sudo tcpdump [options] [filter expressions]
+    -i, specifica l'interfaccia su cui catturare/filtrare,
+    -w, scrive in un file il traffico,
+    -r, legge un trace file con traffico salvato in precedenza.
+
+    "udp", cattura traffico udp
+    "tcp", cattura traffico tcp
+    "[dst/src] port 53", cattura traffico sulla porta specificata, posso catturarlo sia unidirezionale che bidirezionale
+    "host [IP/hostname]" cattura il traffico destinato a quell'host
+
+Quando si fa partire una cattura, vengono stampate sul terminale informazioni del tipo:
+
+(timestamp)(pacchetto IP)(S.hostname)(S.port number)[quando sono well known fa conversione IP-porta]
+01:46:28.808262 IP danjo.CS.Berkeley.EDU.ssh > 
+
+            (D.hostname)                (D.port number)
+adsl-69-228-230-7.dsl.pltn13.pacbell.net.2481: .
+
+(TCP specific information, numeri di seq. e ack, dim. finestra)
+2513546054:2513547434(1380) ack 1268355216 win 12816
+
+Wireshark e Tshark, evoluzione di tcpdump, sono definiti come 'packet sniffer e protocol analyzer', quindi alla semplice cattura di traffico si fa analisi.
+L'analisi che si può effettuare con wireshark si limita principalmente al layer 3 e 4, l'app. layer si appoggia a ssl/tsl quindi i dati sono scriptati
+in tcpdump, il filtraggio è di sola cattura(ovvero accetto solo i pacchetti specificati), 
+mentre in wireshark sono ammessi anche filtri di visualizzazione, ovvero cattura tutto ma poi mostro solo quello che mi interessa
+
+Funzionamento di wireshark
+
+    Application         Application
+        ^                   ^
+        |                   |
+--------|-------------------|-------------
+        |                   |
+      TCP/IP               NPF(Network Packet Filter, prende delle copie dei pacchetti interrogando il driver,
+        |                   |  è quello su cui si appoggia Wireshark per avere accesso ai pacchetti)  
+        |                   |
+        |___________________|
+                  |
+                  |
+            NIC Driver
+                  |
+------------------|-----------------------
+                  |
+                packets
+
+Struttura dell'NPF
+
+                NIC Driver 
+                    |
+                    |
+                Network Tap
+                /   |   \
+               /    |    \
+              /     |     \
+             /      |      \
+        filter  Statistical Dump Engine -> Kernel Buffer -> to Disk
+            |      Engine           \
+            |       |                \
+        Kernel      |                 \
+        Buffer      |               Logging app.
+          /         |
+         /          |
+      User          |
+      Buffer        |
+        |         Monitoring app.
+        |
+    Capture app.
+
+Buffer Kernel gestiti in maniera circolare, quindi c'è una dimensione massima consentita per il salvataggio dati, 
+se si supera si comincia a sovrascrivere i dati più vecchi.
+
+Struttura interna di wireshark
+
+    GUI
+     |
+     |
+    _|____________                              sa analizzare i protocolli definiti, con i plugin posso aggiungerne di nuovi
+    |            |                                  ^ 
+    |  Core      |----------Epan{Protocol-Tree, Dissectors, Dissector-Plugins, Display-Filters}   
+    |____________|          Enhanced Protocol Analyzer(identifica l'intestazione del pacchetto, prende i vari i campi 
+     |          \                               e li interpreta, rendendo la comprensione più facile)
+     |           \
+     |            \
+    Capture         Wiretap----disk
+(interfaccia per       (Libreria utilizza per leggere e scrivere file di tipo libpcap, pcapng e simili)
+il capture engine)                      
+     |
+     |
+    Dumpcap
+    capture engine
+     |
+     |
+    WinPcap/libpcap(librerie esterne per cattura e filtraggio pacchetti in vari ambienti
+    il filtraggio effettuato in questo punto è di basso livello)
+
+Definizione Modalità promiscua: 
+Normalmente l'interfaccia di rete effettua un filtraggio automatico se arrivano pacchetti non destinati a lei, 
+mentre vengono passati agli altri layer della pila protocollari o pacchetti broadcast o quelli dove l'indirizzo corrisponde.
+La modalità promiscua fa si che il driver accetti ogni pacchetto, senza preoccuparsi se sia per noi o no.
+In questo modo con wireshark possiamo analizzare 'tutto' il traffico, e non quello destinato a noi, aiutandoci nel monitoraggio, analisi e diagnostica della rete.
