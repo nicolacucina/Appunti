@@ -7,10 +7,10 @@ Per questo motivo il Network Management diventa una serie di procedure di integr
 al fine di monitorare, testare, configurare, analizzare e controllare una rete in Real Time per ottenere le performance e le specifiche richieste.
 
 Considereremo:
--Rilevazione di errori, fallimenti o anomalie (come il malfunzionamento di router, switch, di un servizio e simili) e la correlazione di informazioni a disposizione per detectarli,
--Monitoraggio di Host(che siano client, server o altre componenti nella rete) e del traffico(rilevazioni attacchi, gestione delle risorse in maniera dinamica),
--Instradamento di rete(funzionamento delle routing tables e problemi che nascono quando iniziano a flippare),
--Sicurezza della rete(risposta agli attacchi e rilevazione delle intrusioni).
+    -Rilevazione di errori, fallimenti o anomalie (come il malfunzionamento di router, switch, di un servizio e simili) e la correlazione di informazioni a disposizione per identificarli,
+    -Monitoraggio di Host(che siano client, server o altre componenti nella rete) e del traffico(rilevazioni attacchi, gestione delle risorse in maniera dinamica),
+    -Instradamento di rete(funzionamento delle routing tables e problemi che nascono quando iniziano a flippare),
+    -Sicurezza della rete(risposta agli attacchi e rilevazione delle intrusioni).
 
 Modello FCAPS:
     -FAULT: rilevazione di problemi ed errori,
@@ -19,7 +19,7 @@ Modello FCAPS:
     -PERFORMANCE: misurare le prestazioni di dispositivi e della rete,
     -SECURITY: firewalling, gestione accesso interno-esterno della rete.
 
-Ci basiamo sulla pila protocollare TCP/IP e sui suoi pacchetti, i dati che utilizziamo nel management sono dei metadati che descrivono i pacchetti in maniera più compatta perchè non sono necessarie tutti campi degli header di ogni strato.
+Ci basiamo sulla pila protocollare TCP/IP(segmento, datagramma, trama nomi dei pacchetti nei vari layer) e sui suoi pacchetti, i dati che utilizziamo nel management sono dei metadati che descrivono i pacchetti in maniera più compatta perchè non sono necessarie tutti campi degli header di ogni strato.
 
 3 'Piani' di lavoro:
     -Utente: dove passa la maggior parte del traffico dei servizi e delle app di rete,
@@ -35,15 +35,15 @@ Ad esempio, uno switch:
     | data link |   | data link |   | data link |
     | physical  |   | physical  |   | physical  |
 
-Lo switch(nella versione base) si limita a rilanciare il traffico che arriva su una interfaccia verso un'altra seguendo la sua tabella autoappresa di instradamento.
-Per fare questo gli basta analizzare gli header Ethernet(Link Layer), mentre possiamo configurare uno switch da remoto utilizzando una applicazione installata al suo interno.
-Questa servizio lavora all'Application Layer.
+Lo switch(nella versione base) si limita a rilanciare il traffico che arriva su una interfaccia verso un'altra seguendo la sua switching table.
+Per fare questo gli basta analizzare gli header Ethernet, mentre possiamo configurare uno switch da remoto utilizzando una applicazione installata al suo interno.
+Questa servizio lavora all'Application Layer, mostrando come i piani utente/controllo e management siano del tutto disaccoppiati.
 
-In questo caso si parla di architettura Client-Server, dove il Server è ospitato all'interno del dispositivo da configurare, sempre acceso e con indirizzi fissi, affinchè sia contattabile facilmente,
+In questo caso si parla di architettura Client-Server, dove il Server è ospitato all'interno del dispositivo da configurare, sempre acceso e con indirizzi fissi affinchè sia contattabile facilmente,
 mentre il client è il software di monitoraggio o configurare che interagisce con la componente, richiedendo informazioni o inviando una configurazione da utilizzare.
-L'architettura Client-Server prende anche il nome di Request-Response all'interno del network management, facendo riferimento al fatto che quando al client serve un qualcosa dal server, gliela 'chiede' e attende che il server 'risponda'.
+L'architettura Client-Server prende anche il nome di Request-Response all'interno del network management, facendo riferimento al fatto che quando al client serve un qualcosa dal server, gliela chiede e attende che il server risponda.
 
-L'alternativa a questa schema è l'architettura Subscribe-Notify, in cui il client si 'iscrive' al server, così il server può continuare a lavorare senza essere rallentato da continue richieste e senza occupare banda,
+L'alternativa a questa schema è l'architettura Subscribe-Notify, in cui il client si iscrive al server, così il server può continuare a lavorare senza essere rallentato da continue richieste e senza occupare banda,
 quando avviene qualcosa all'interno del server che va segnalato, invia una notifica a tutti gli iscritti.
 Nella Subscribe-Notify si invertono i ruoli, perchè sarà il software di monitoraggio a dover stare sempre acceso, in attesa delle notifiche provenienti dalle componenti di rete.
 
@@ -66,5 +66,5 @@ Multiplexing/Demultiplexing: operazione di gestione della trasmissione e ricezio
     -Per multiplexare i dati provenienti da più processi aggiungo l'header del protocollo di trasporto(distingue i dati),
     -Per Demultiplexare, uso gli header per consegnare ai socket i dati associati.
 
-Dato che in UDP non c'è il concetto di sessione, questo processo di MUX/DEMUX contepla solo un processo in ascolto all'interno del server da contattare, quindi ho coppie porta WellKnown - porta Client
-In TCP invece ho coppie di socket mittente-ricevitore, perciò posso utilizzare più processi nei dispotivi per creare più connessioni.
+Dato che in UDP non c'è il concetto di sessione, questo processo di MUX/DEMUX contepla solo un processo in ascolto all'interno del server da contattare, quindi ho coppie porta WellKnown - porta Client che identificano i due processi
+In TCP invece ho coppie di socket mittente-ricevitore, perciò posso utilizzare più processi nei dispotivi per creare più connessioni senza confondere quali dati appartengano a quale sessione.

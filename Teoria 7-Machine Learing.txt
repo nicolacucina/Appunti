@@ -1,0 +1,28 @@
+Continuando il discorso sulle IDS, teoria di Machine learing applicato al networking
+
+Per poter scegliere l'approccio migliore(misuse o anomaly), occorre fare una prima analisi del dataset.
+Se mi aspetto che il comportamento futuro rimanga simile a quello attuale, voglio un dataset completo con ogni tipologia di attacco e addestrare su quello per fare misuse detection.
+Se ho dataset sbilanciati questo approccio non funziona, l'algoritmo non riesce ad apprendere bene come sia fatto un attacco, allora posso pensare di usare solo la porzione di traffico normale
+e addestrare per fare anomaly detection(che funziona pure meglio contro zero day attacks).
+
+Alcuni questioni:  
+    -come decido la threshold tra le due classi? non possiamo farlo a caso quindi occorre un meccanismo per trovarla
+    -applico la threshold indiscriminatamente a tutti gli utenti? non dovrei
+    -ogni quanto si aggiorna la threshold?
+    -in tutto questo, che prestazioni offre un metodo con soglia? un sola soglia è poco robusto,
+    posso pensare di creare un messanismo multisoglia con pericolosità incrementale, cosi posso in qualche modo 'filtrare' le anomalie
+
+
+Attacchi noti:
+    probe: scansione di rete per acquisire informazioni
+    r2l: dall'esterno cercano di entrare nei nodi interni alla rete
+    u2r: si cerca di passare da privilegi utenti a privilegi root(in una escalation che segue la scaletta)
+    dos
+
+Dato che si lavora con meccanismi data-driven, la scelta delle feature è importante, devo utilizzare solo quelle significative.
+Tra queste i timestamp saranno sempre importanti, tutti i miei dati sono delle serie temporali di pacchetti.
+Altre feature importanti sono: durata della sessione, tipo di protocollo utilizzato, flag, i byte inviati, errori nei pacchetti, byte urg
+Va fatta EDA per ridurre il più possibile la ridondanza nella feature e tenere le migliori senza perdere informazione(altrimenti avrei troppe feature a considerare ogni cosa ed esplode la complessità)
+
+Modelli regressivi utili per predirre il futuro se ci sono pattern ciclici nel traffico
+Altri approcci usano reti neurali(per lavorare su un singolo parametro), molto più sensibili agli outlier in fase di training(altrimenti inserire nel modello parametri per inseguirli)

@@ -1,0 +1,222 @@
+Per analizzare in maniera efficace una rete occorre collezionare dati da sorgenti eterogenee, perchè ognuna cattura un aspetto di un evento,
+ed unendo più aspetti di un evento sarà più facile riuscire a comprenderlo a fondo.
+Parliamo di analisi Data-driven, più dati colleziono e più dati avrò da analizzare, ma non posso nemmeno pensare di collezionare ogni singolo
+pacchetto, non basterebbero le risorse per poterlo fare.
+Quindi vogliamo avere più informazioni possibile utilizzando il minor numero possibile di risorse.
+
+Un altro aspetto da considerare è la sicurezza, gli attacchi potrebbero avvenire in qualsiasi momento, quindi dovrei monitorare costantemente,
+ma questo risulta molto pesante dal punto di vista computazionale, ma se effettuo un monitoraggio a fasce orarie/campionario/statistico o 
+uso una altra qualsiasi politica, alcuni attacchi potrebbero sfuggire alla mia rilevazione.
+
+Altro problema, si riparte dal mantra observe,analyze and react, dopo che ho collezionato tutti questi dati, devo riuscire a capire cosa significano,
+cosa rappresentano, nel caso della sicurezza ad esempio, devo sapere distinguere attacchi veri da traffico benigno, o distinguere un attacco
+innoquo da uno serio.
+Quindi abbiamo:
+    -molto traffico 'innoquo', di poco interesse per la nostra analisi ma che per fortuna può essere riconosciuto con poche informazioni
+    -pochi attacchi, ma la maggior parte non rappresentano un vero pericolo, perciò possono essere quasi ignorati(tipo operazioni di scan)
+    -infine i veri attacchi che possono creare i problemi
+
+Schema del Framework di Network Analysis
+
+Le informazioni provengono dai sensori, dei dispositivi in grado di catturare il traffico e generare qualcosa che lo descrivano,
+possono catturare il traffico e reinviarlo cosi com'è(versione più basilare) oppure creare statistiche aggregate.
+I sensori sono categorizziati in base a cosa osservano:
+    -network sensor: guardano il traffico/la rete in generale, qua troviamo gli IDS, i Firewall, Netflow, etc.
+    -host sensor: si accupano del singolo computer e componente, può essere un IDS con range limitato, un AV(antivirus), etc.
+    -service sensor: questi sono legati ai log creati dai servizi o dal sistema
+
+            Sensor Network                                                      Repository: un database dove si trovano tutti i dati non-online
+                |                                                                    Hanno delle politiche per la gestione della archiviazione dei dati 
+                |                                                                    sia dal punto di vista temporale(giorni, mesi, anni, etc.) che del dettaglio dei dati(più sono dettagliati i dati che salvo e più spazio occupano)   
+         _______|___________________________________
+        |                                           |                           Archive: porzione del database legata agli eventi, possono provenire da netflow, da log dei servizi, informazioni di sistema etc.
+    ____|__________________                         |                                  questi dati non vengono aggiornati/modificati, sono dati read-only, quindi dei buoni candidati su cui basare una analisi della rete
+   |Repository             |                        |
+   |                       |         _______________|__________                 Annotation: qua si salvano informazioni complementari a quelle contenuti nell'archive, ad esempio
+   | Annotation        KB -----------|   Real Time Processing |                        nell'archive ho un indirizzo IP associato ad un pacchetto, nell'annotation ho l'associazione ip-proprietario, ma il proprietario potrebbe cambiare col tempo,
+   |                   |   |         |________________________|                        perciò questi sono modificabili
+   |        Archive----|---|------------|           |
+   |___________|_______|___|                        |                           Knowledge Base: informazioni di varia natura che il manager di rete ha maturato con l'esperienza(tipo una prior di machine learnbing),
+               |       |                            |                                  conoscenza pregressa che va oltre a quello che si potrebbe estrapolare da un singolo pacchetto, solitamente questa porzione del database è mantenuta da un utente umano per questo motivo, 
+    ___________|_______|___                         |                                  mentre archive e annotation possono essere gestite in maniera automatica
+    |    Query Processing  |                        |
+    |______________________|                        |                           Query Processing: un ambiente che permette di effettuare richieste al database, ma supporta anche
+                |                                   |                                  servizi come la sintesi dei dati
+                |---------------------Console-------|
+                                                                                Real Time Processing: tutto quello visto fin'ora ^ lavora OFFLINE, quindi nel caso delle query posso anche 'prendermi il mio tempo' per fare richieste elaborate,
+                                                                                       mentre se sto lavorando ONLINE ho delle necessità differenti
+
+La Repository non è un database relazionale perchè stiamo trattando dei dati per lo più read-only, non abbiamo problemi di consistenza dei dati,
+perciò più utenti(che per noi in questo caso sono software di network management) possono accedervi contemporaneamente
+
+I sensori in questo schema sono dei dispositivi passivi, aspettano che passi del traffico creato da altri e poi effettuano le proprie operazioni,
+possiamo pensare a configurazioni attive, dove un sensore utilizza ping, traceroute, nmap o altre operazioni simili e, in base alle risposte ricevute,
+risponderà di conseguenza.
+
+Alcune questioni:
+    -Dove si trova questo Framework realmente nella rete? possiamo avere uno schema di gestione 'in banda' dove il piano dati di management corrisponde con quello utente/controllo,
+    quindi condividono i canali trasmissivi, più semplice da un punto di vista perchè non richiede l'installazione di altre componenti, ma occorre stare attenti
+    alle prestazioni, il traffico di management non deve interferire con il traffico utente che si sta monitorando/analizzando.
+    L'altro schema è gestione 'fuori banda', con una rete dedicata al management separata da quella usata dal traffico utente(questa separazione può essere fisica
+    se uso dei cavi di rete differenti, oppure solo logica se uso meccanismi tipo VLAN o VPN)
+    
+    -Dove vengono salvati i dati? logicamente nella repository, ma questa può stare all'interno dei dispositivi che stiamo monitorando(il sensore diventarebbe
+    un processo eseguito al loro interno), oppure utilizziamo una architettura centralizzata(tipo Netflow che ha il concetto di collettore verso il quale esportare i dati)
+
+    -Chi controlla i sensori? dato che tutti i dati e le analisi dipendono dai sensori stessi, occorre conoscere il loro stato, se stanno funzionando correttamente o no etc.
+
+Proseguendo il ragionamento iniziato all'ultimo punto, i dati che abbiamo a disposizione nel network management provendo dai sensori, perciò ci sarà una forte dipendenza dal loro funzionamento.
+Qui nasce una categorizzazione dei sensori sulla base di tre criteri:
+    -Vantaggio: dove sono posizionati all'interno della rete
+    -Dominio: cosa possono vedere del traffico in rete
+    -Azione: come può esportare i dati e cosa può fare, come integarisce con i dati che colleziona
+Questi criteri sono necessari per poter determinare la validità della mia analisi e giustificare le decisioni che verranno prese(essendo data-driven, devo avere dei dati sensati)
+
+Dominio:
+    -rete: si occupa del traffico in senso generale, quindi i dati derivano da Pcap(Packet capture) o Netflow, dati in tempo reale orientati al pacchetto
+    -servizio: si occupano dei servizi ospitati nei vari dispositivi, qua i dati provengono dai log dei servizi oppure da eventi/allerte che generano, possono essere sempre in real-Time
+    -host: dati provenienti dagli host, quindi sono informazioni sul loro stato principalmente, qua il monitoraggio raramente è real-Time perchè avremo dati solo quando cambia lo stato di una componente ad esempio(inutile che continuo a monitorare qualcosa che non cambia)
+    -attivo: dati che posso reperire da operazioni di scanning, sicuramente non real-time, ho dati solo quando eseguo lo scan
+
+Azione: 
+    -Report: il sensore riporta informazioni su qualsiasi cosa vede, è l'azione più basilare a disposizione
+    -Evento: i dati vengono elaborati e condensati per creare una informazione sintetica(tipo IDS e AV)
+    -Control: il sensore è in grado di interagire col traffico attivamente, modificandolo e bloccandolo(ad esempio se il sensore è in grado di capire che sta osservando un attacco, meglio bloccarlo subito piuttosto che aspettare)
+
+Vantaggio:
+    Qua abbiamo bisogno di uno schema della rete che intendiamo monitorare, in base alla morfologia di rete possiamo scegliere i punti di vantaggio migliore per ottenere il massimo delle informazioni con il minimo costo o ridondanza
+    -data link layer: se lavorariamo in questo strato protocollare dobbiamo considerare prima di tutto se si lavora con uno switch, un hub, wifi, un bus condiviso, etc. ,
+    perchè in base alla tecnologia utilizzata cambia la situazione: un hub replica tutto il traffico su tutte le porte, perciò il sensore potrà vedere tutto il traffico layer 2 a prescindere da dove lo metto,
+    stesso ragionamento con wifi facendo attenzione però alle caratteristiche delle onde radio in questione; con gli switch è diverso perchè hanno capacità di instradamento, perciò non tutto il traffico passa per ogni collegamento, 
+    sicuramente potrò osservare il traffico broadcast, ma per il traffico multicast/unicast non potrei essere fortunato e perdere informazioni.
+    In questo caso(con lo switch) si possono utilizzare due soluzioni: physical tap, una sonda posta sul collegamento, o port mirroring, dove lo switch duplica il traffico su una interfaccia dedicata
+    
+    -network layer:  in questo caso si interagisce con i router, qua il vantaggio va scelto tenendo conto del TTL(i pacchetti potrebbero essere scartati prima della mia sonda, perciò non ho traccia del loro passaggio) oppure
+    posso avere problemi legati alle tabelle di instradamento(se metto il sensore su un collegamento che i router considerano non buono, non vedrò nulla là dentro) e al loro malfunzionamento(se iniziano a flippare le routing table, il sensore che pensavo di aver messo nel punto giusto ora non lo è più)
+    In generale le middlebox ci creano problemi a causa dei servizi che possono offrire(NAT, Proxy, VPN, etc.):
+        -problemi di identità: non sempre riesco a ricostruire i processi di mapping interni e perdo la possibilità di ricostruire il percorso/la sorgente dei dati
+        -problemi di causalità: non tutte le richieste che arrivano da un lato della middlebox vengono osservate dall'altro lato
+        -problemi di aggregazione: classico problema del nat, ho una identità condivisa da più utenti
+        -problemi di consistenza: l'identità degli utenti può cambiare col tempo(basta pensare al DHCP e alla scadenza del lease della config)
+        -problemi di cifratura: necessaria per la sicurezza ma un problema per l'analisi(connessioni router2router e tunneling sono esempi in questo layer, altrimenti la cifratura di solito si incontra negli strati protocollari superiori)
+    
+    Quindi le middlebox in generale richiedono un sensore a monte e a valle per poter correlare le informazioni
+
+
+Netflow
+Come succede per SNMP, con questo termine parliamo dell'interno framework, perché è sia un protocollo, un formato dei dati e una applicazione.
+Si occupa di creare e collezionare metadati relativi a flussi TCP/IP che attraversano la rete/il dispositivo.
+Richiede il supporto attivo da parte del sensore di tipo Report e i dati creati vengono esportati verso un collettore.
+SFlow, Sample Netflow, versione aggiornata di Netflow, più leggera perchè si basa sul campionamento del traffico, quindi non occorre analizzare ogni singolo pacchetto ma ci si basa solo su un sottoinsieme
+
+Il concetto di flusso è una estensione(best effort, una approx.) di quello utilizzato in TCP, dove è ben definito dall'handshake e il teardown.
+In netflow, un flusso è una collezione di pacchetti con gli stessi indirizzi TCP/IP ravvicinati nel tempo, con questa definizione è concepito anche un flusso di traffico UDP
+Un flusso comincia quando trovo per la prima volta un pacchetto con una determinata coppia porta-ip, e utilizzo dei timer per decidere dopo quanto tempo considerare terminata la sessione.
+Inoltre, dato che per flussi molto lunghi non posso aspettare che si arrivi alla chiusura per generare informazioni, si una anche un altro timer interno per poter generare dati anche per queste tipologie di flussi.
+
+Componenti principali di Netflow:
+    -Exporter: un dispositivo con supporto per Netflow che sa generare metadati relativi ai flussi e sa inviarli verso il collettore
+    -Collector: è un programma(ospitato in un server dato che deve essere contattabile in ogni momento) che si occupa di ricevere e salvare i dati. può fare operazioni di pre-processing.
+    -Analyzer: utilizzando i dati salvati nel collettore crea degli allarmi, dei report, sa analizzare i dati per arrivare a delle conclusioni.
+
+dato che Netflow è tecnicamente un protocollo proprietario di cisco, sono nate molte varianti col tempo, ma tutte contengono almeno le seguenti informazioni:
+    -Interfaccia di input del dispositivo
+    -Indirizzi IP sorgente e destinatario
+    -Protocollo di trasporto utilizzato, con relative porte
+    -ToS, Type of service
+Queste sono le informazioni di base che troviamo nelle entry di ogni flusso, non ci sono informazioni legate al layer 2(parliamo di flussi, sono in qualche modo indipendenti dal canale di trasporto utilizzato)
+A partire dalla versione 5 troviamo anche: numero di pacchetti scambiati, dimensione dei pacchetti, timestamp di start-finish, flag tcp, next hop, interfacce di I/O(basato su indici SNMP perchè più precisi)
+la versione 9 aggiunge support per ipv6, verisone 10 o IPFIX include anche campi speciali per il NAT
+
+Ci sono differenze tra dispositivi fisici e virtuali per Netflow? non proprio, la vera differenza l'abbiamo nei dispositivi fisici che supportano nativamente Netflow, avranno delle prestazioni migliori.
+Per tutti gli altri dispositivi c'è la necessità di software che sappia effettuare la conversione tra traffico(i pacchetti quindi) e i flussi Netflow-compatible.
+Ci sono delle best practice che si possono usare per evitare di avere problemi di prestazioni dovuti a questo layer aggiuntivo:
+  
+    -ridurre la priorità del processo, così quando possibile il dispositivo guarderà tutto il traffico per generare i record, altrimenti quando c'è molto traffico si dedicano la maggior parte delle risorse allo smaltimento del traffico e si creano record solo per i flussi più importanti
+    -per i dispositivi che lo permettono, c'è una porta dedicata alla duplicazione/esportazione del traffico, quindi delego le funzionalità Netflow a un dispositivo secondario
+    -usare tecniche di campionamento per ridurre la quantità di dati da processare
+    -aggregare traffico e/o dati, si perde di granularità ma migliori prestazioni
+    -altrimenti lavoro con dati pcap e una applicazione esterna al dispositivo(quindi avrò un sensore da qualche parte, perdo però il vantaggio(nel senso del monitoraggio) del router, il sensore vedrà di meno rispetto al router)
+
+Inoltre, per i dispositivi che non supportano Netflow nativamente, la best practive è prima salvare i dati 'raw', e poi processarli in un secondo momento.
+
+SFlow
+Compete con Netflow non nella capacità di identificazione dei flussi(rimane pressoche invariata), ma sulle prestazioni offerte(lavorare su un sottoinsieme dei dati è sicuramente più rapido) e sulla granularità(in SFlow lavora allo strato 2, non permesso da Netflow).
+Permette di esportare pacchetti troncati, anzichè dover calcolare un record, prendo il pezzo di pacchetto dove ci sono gli header ed esporto quello.
+L'architettura usata in sFlow è la stessa, c'è un network di exporter che inviano dati ad un collettore centralizzato, ma è un approccio molto più scalabile di Netflow grazie al campionamento(anche se il tradeoff è la qualità delle informazioni, dato che potrei perdere alcuni aspetti dei flussi/eventi)
+
+                        pacchetto sFlow
+__________________________|__________
+|                         |         |
+|                   sFlow agent     |
+|                   /      |        |
+|                  /       |        |
+|  Counters/Buffers      Samples    |
+|     ^                    ^        |
+|  ASIC(Application Specific        |
+|       Integrated Circuits)        |
+|___________________________________|   
+
+
+Pacchetto sFlow
+
+    packet header(del sample), interfaccia src/dst, sampling param, forwading info(ip src/dst, netmask src/dst, next hop), user ID, URL, counters(ottenuti tramite SNMP)
+
+
+L'agent sFlow lavora nel modulo general purpose dello switch/router/dispositivo, quindi non toglie risorse computazionali al routing/forwarding, e oltre a questo c'è il funzionamento campionario.
+Questo miglioramento nelle performance però lo perde quando iniziamo a parlare di dispositivi virtualizzati.
+
+Problema di sFlow
+Lavorando per campionamento, avremo a disposizione un pacchetto ogni T, ma il traffico di rete non è un flusso di pacchetti costante, ma abbiamo fenomeni chiamati microburst, dei fenomeni implusivi dove si concetrano un gran numero di pacchetti.
+Questi fenomeni sono quasi del tutto invisibili ad sFlow, dato che dal suo punto di vista la quantità di traffico/pacchetti rimane invariato.
+Nonostante questo però possiamo considerare il traffico internet CBR(Constant Bit Rate) a tratti, soprattutto il traffico "background", quindi è comunque una opzione valida per monitoraggio analisi del traffico.
+
+Che errore commetto con sFlow? ogni n pacchetti ne prendo 1, ho una frequenza di campionamento di 1/n(configurabile)
+possiamo calcolare dal dataset media e varianza(media come media aritmetica semplice, varianza come somme del quadrato delle diff. tra valore e la sua media divisino n-1)
+quindi posso trovare l'errore di stima come x-mu/dev. std. [discorso su teoria della misura e intervalli di confidenza]
+
+
+
+
+In-band Network Telemetry
+Netflow e sFlow sono due metodi classici per il monitoraggio di rete, ma abbiamo visto un problema con i microburst, e nuove tecnologie non funzionano bene con questi protocolli(SDN, Software Defined Networks, utilizzano dispositivi con funzionalità precise che non supportano Net/s Flow).
+
+SDN: sposto l'intelligenza in un dispositovo centralizzato, cosi ho tanti dispostivi stupidi in giro per la rete e concentro tutto il monitoraggio/analisi/decison making al centro stella
+
+Una prima soluzione proposta è stata quella di utilizzare il piano dati utente per veicolare questi messaggi(ambiente più flessibile),
+questo potrebbe avere un impatto sulle performace sia piano management che utente, e per soluzioni SDN potrebbe essere necessario lavorare pacchetto per pacchetto piuttosto che con statistiche aggregate come quelle sui flussi
+Qua nasce la telemetria di rete, combina l'instradamento e rilancio dei pacchetti con il monitoraggio di rete andando a modificare i pacchetti, aggiungendo negli header dei metadati che lo descrivono, utilizzati poi per operazioni di management.
+Dal punto di vista delle connesioni piano utente, questa opzione è del tutto trasparente, in quanto la telemetria viene applicata solo sulle middlebox della nostra rete, e prima di far arrivare i pacchetti a destinazione rimuoviamo ogni traccia della misurazione.
+Dato che avviene modifica dei pacchetti, la telemetria è considerata una misura attiva.
+
+nella architettura INT abbiamo una serie di dispositivi in grado di effettuare operazioni di telemetria(che di base sono modifica del traffico), le informazioni di telemetria sono però utilizzate solo da un controller e da un collector, i dispositivi non ci fanno nulla.
+il collettore raccoglie tutte le informazioni di telemetria alla 'fine del percorso' del pacchetto e le salva all'interno di un database, mentre il controller(anche utilizzando i dati nel database) può prendere delle decisioni e controllare il comportamento dei dispostivi di rete
+
+quando si aggiungono il metadati di telemetria, solo il primo dispositivo aggiungere un header specifico(usato per riconoscere la presenza di info di telemetria), poi ogni dispositivo aggiunge una porzione di informazioni.
+L'header è 'fisso' : 
+    Versione, flag, instruction count, max hop count, total hop count
+    instruction bitmap, ...., int metadata
+Mentre i dati che possiamo inviare sono molto eterogenei, dipende da cosa vogliamo rilevare con la telemetria nei vari dispositivi (tempistiche, stato della rete, percorso preso, interfacce utilizzate, quello che si vuole)
+
+più modalità INT:
+    INT-XD(Export data, ogni nodo esporta dei metadati in base ad una watchlist, una lista di regole), nessuna modifica al pacchetto
+    INT-MX(Embed instruction), il primo nodo contiene la watchlist con i criteri di match, si inseriscono istruzioni INT ma non metadati, ma comunque ogni dispositivo esporta i dati, solo il primo nodo modifica il pacchetto
+    INT-MD(Embed Data), il primo nodo contiene la watchlist di criteri, inserisce header INT + info primo nodo, il secondo dispositivo aggiunge le sue info, etc. finchè non arriva all'ultimo salto prima della destinazione in cui si prendono tutti i dati INT e si esportano al collettore(ogni nodo modifica il pacchetto)
+
+Problemi INT:
+-aggiungendo dati negli header e rimanendo fissa la MTU, ho meso spazio per i dati utente all'interno dei pacchetti, ed inoltre non posso sapere a priori quandi dati INT verranno aggiunti ai pacchetti, non posso sempre sapere la strada che prenderanno(spreco di risorse)
+-alto carico computazionale per la modifica dei pacchetti -> peggioramento delle prestazioni
+-alta sensibilità alla perdita dei pacchetti
+
+Framework P4(programming protocol indipendent packet processor)
+
+un linguaggio di programmazione specifico per i dispositivi di rete, permette di avere un piano dati utente programmabile,
+in base a delle regole di match(algoritmo di classificazione) sono applicate delle modifiche, e si utilizzano dei buffer interni per salvare i pacchetti in attesa delle modifiche di input e di output
+
+indipendente dall'hardware utilizzato per eseguirlo, ognuno deve però possedere un compilatore p4 per convertire codice p4 in codice macchina che sa eseguire.
+p4 è indipendente dal protocollo di rete, può lavorare con pacchetti ip, ethernet, tcp etc., nel linguaggio sono già specificati gli header e i campi di tutti questi protocolli
+
+c'è un programma P4 che classifica i pacchetti in base all'header e decide le politiche di gestione del traffico in input(accept, drop, etc.)
+un compilatore p4 crea dei metadati 
+
+Problema di p4 sono sempre le prestazione, tutto questo lavoro di marching + compilazione di codice deve avvenire praticamente in real time altrimenti il traffico ne risente

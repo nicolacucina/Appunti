@@ -1,0 +1,43 @@
+Il framework netfilter/iptables gestisce tutte le attività di firewalling in linux:
+    -netfilter comprende alcuni moduli del kernel
+    -iptables è il comando che si utilizza per interagire con netfilter
+
+Permette di effettuare operazioni come:
+    -filtraggio di pacchetti stateful o stateless(quindi implementano un firewall stateful(che tiene traccia dello stato delle connessioni in una tabella) o firewall stateless(che lavora con una serie di regole di ACL))
+    -natting
+    -con plug-in si può fare di tutto
+
+iptables va usato nella command line, necessita di autorizzazione super-user
+
+iptables lavora utilizzando 3 tabelle di default:
+    -filter: utilizzata nel firewalling
+    -nat
+    -mangle: permette di modificare i pacchetti
+
+ognuna di queste tabelle ha delle catene di default al loro interno:
+    filter: INPUT, OUTPUT, FORWARD
+    nat: PREROUTING, POSTROUTING, OUTPUT
+    mangle: PREROUTING, FORWARD, INPUT, OUTPUT, POSTROUTING
+
+in ogni catena poi troviamo un target di default, che indica la politica di default di gestione dei pacchetti,
+altrimenti, in ogni chain possiamo definire una serie di regole specifiche, ognuna con il proprio target
+
+                        packet in
+                            |
+            ________________|_______________
+            |                               |
+    nat-POSTROUTING                  mangle-PREROUTING
+            |                               |
+    magle-POSTROUTING                nat-PREROUTING
+            |                               |
+    filter-OUTPUT                    ROUTING module
+            |                               |
+    nat-OUTPUT                Yes---data for firewall?----No
+            |                  | (ovvero per me? o per    |
+    mangle-OUTPUT         mangle-INPUT   altri)   mangle-FORWARD
+            |                  |                          |
+    ROUTING module        filter-INPUT            filter-FORWARD
+            |                   |                         |
+            |__Firewall Reply___|                  mangle-POSTROUTING
+                                                          |
+                                                   nat-POSTROUTING

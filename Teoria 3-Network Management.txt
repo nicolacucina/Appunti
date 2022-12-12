@@ -14,7 +14,7 @@ Lo standard ISO definisce il Network Management in funzione delle 5 categorie FC
     -Performance Management,
     -Security management.
 
-Il sistema di management opera come un sistema di controllo(schemi con ramo di feedback)
+Il sistema di management opera come un sistema di controllo(schemi con ramo di feedback), configuro dispositivi, osservo i risultati e reascisco di conseguenza
 
 Il mantra:
 
@@ -27,9 +27,9 @@ Observe----------React
 
 All'interno della nostra rete, abbiamo una serie di Managed Devices(router, switch e altre componenti). 
 All'interno dei devices si trovano Managed Objects, che rappresentano il comportamento(un aspetto) di una componente.
-Questi object sono gestiti da degli Agent, dei processi che sanno leggere i dati provenienti dal dispositivo e dagli Object e li salvano all'interno di un MIB, Management Information Base.
+Questi Object sono gestiti da degli Agent, dei processi che sanno leggere i dati provenienti dal dispositivo(anche a livello circuitale) e creano gli Object di conseguenza.
+Gli Agent fanno riferimento ad una Managing Entity, un manager che osserva la rete e in funzione delle informazioni ricevuti da prendere delle decisioni, dopo aver interrogato gli agent salvano i dati all'interno di un MIB, Management Information Base.
 Le informazioni che troviamo in questo database sono di sola lettura, dato che sono log, pacchetti inviati/ricevuti, funziona si/no, etc.
-Se non comunicano con il MIB, gli Agent fanno riferimento ad una Managing Entity, un manager che osserva la rete e in funzione delle informazioni ricevuti da prendere delle decisioni.
 
 Lo scambio di dati tra Agent, Manager e MIB fa uso di protocolli specifici per il management, i primi ad essere stati utilizzati furono CMIP(Common Management Information Protocol) e SNMP(Simple Network Management Protocol)
 
@@ -43,7 +43,7 @@ il de facto standard utilizzato al momento è SNMP v3, nato come evoluzione di S
 
 SMI
 definisce la sintassi(come si scrivono) e la semantica(cosa significano) i dati. L'obiettivo è la non ambiguità dei dati.
-Tipi fondamentali di dati: numeri interi(signed o unsigned, 32 o 64 bit), stringhe, identificatori di oggetti, indirizzi ip, contatori(32 o 64 bit)
+Tipi fondamentali di dati: numeri interi(signed o unsigned, 32 o 64 bit), stringhe, indirizzi ip, contatori(32 o 64 bit)  e OBJECT ID
 OBJECT-TYPE: fanno riferimento ad un oggetto e ai suoi paramentri, coppie chiave valori tra object ip e object type
 MODULE-TYPE: oggetti simili sono raggruppati e gestiti da un modulo comune definito tramite SMI
 
@@ -89,7 +89,7 @@ Tipologie di messaggi in SNMP:
 
     Trap                l'agent informa il manager dell'avvenimento di un evento
 
-Formato del pacchetto SNMP:
+Formato del pacchetto SNMP: preamble(serve ad indicare la lunghezza del pacchetto, variabile a causa delle coppie chiave-valore) + header + payload
 
     PDU Type , Request ID, Error Status, Error Index, {name: value, name: value, ...}
 
@@ -99,13 +99,13 @@ Sicurezza
 
 è possibile cifrare il traffico SNMP per non inviare tutte le info dei dispositivi in chiaro, si utilizza l'algoritmo DES(usa chiavi condivise, richiede quindi la configurazione)
 Si calcolano funzioni hash sul pacchetto utilizzando la chiave condivisa, il destinatario poi effettuerà l'operazione complementare per ottenere il pacchetto in chiaro.
-Si utilizzano nonce,  degli id unici o delle password utilizzabili una sola volta, l'idea è che se un attaccante cattura un pacchetto snmp(anche cifrato), potrebbe continuare ad inviarlo in loop,
+Si utilizzano nonce, degli id unici o delle password utilizzabili una sola volta, l'idea è che se un attaccante cattura un pacchetto snmp(anche cifrato), potrebbe continuare ad inviarlo in loop,
 portando il manager device a creare che lo stato del managed device non stia cambiando. le nonce evitano questo perchè ogni pacchetto è 'unico', ha un identificatore utilizzabile una sola volta, 
 perciò se si reinvia un pacchetto con una nonce già usato, si scarta a priori.
-Inoltre c'è controllo su chi ha accesso a che cosa, sia ai singoli object nei device che all'interno MIB
+Inoltre c'è controllo su chi ha accesso a che cosa, sia ai singoli object nei device che all'intero MIB
 
-In SNMPv3 si parte dalle stesse basi ma c'è una evoluzione, si hanno più applicazioni/processi SNMP che gestiscono i vari aspetti del protocollo(generazione/ricezione di comandi, generazione/ricezione di notifiche, etc.).
-ognuno di questi processi comunica con dei moduli sottostanti(gestione accesso, sicurezza e simili) che creano il pacchetto finale da inviare al transport layer.
+In SNMPv3 si parte dalle stesse basi ma c'è una evoluzione, si hanno più processi SNMP che gestiscono i vari aspetti del protocollo(generazione/ricezione di comandi, generazione/ricezione di notifiche, etc.).
+Ognuno di questi processi comunica con dei moduli sottostanti(gestione accesso, sicurezza e simili) che creano il pacchetto finale da inviare al transport layer.
 Gli header rimangono simili anche se i campi cambiano per diventare più specifici.
 
 Problema sulla presentazione dei dati:
@@ -116,7 +116,7 @@ in ASN si usa il TLV(Type-Length-Value), ovvero si indica il tipo di dato(dentro
 
 NETCONF
 se SNMP si può pensare come lo schema da utilizzare per analizzare/monitorare i dispositivi di rete, netconf offre un modo di configurare i dispostivi.
-si lavora con RPC, Remote Procedure Call, in cui si inviano pacchetti in formato XML tramite TLS/TCP, parlando di pacchetti di configurazione,
+si lavora con RPC, Remote Procedure Call, in cui si inviano le configurazioni utilizzando il formato XML tramite TLS/TCP, parlando di pacchetti di configurazione,
 è più importante che la config sia esatta(integra), quindi udp non può bastare(se arriva un pacchetto che contiene un errore e mi rovina la configurazione ho problemi).
 
 Architettura NETCONF
@@ -134,18 +134,22 @@ Operazioni NETCONF
 
     get-config              recupera i dati di una configurazione(un device può avere più profili di configurazione)
     get                     recupera dati relativi allo stato di una componente
+    
     edit-config             modifica la configurazione del dispositivo
-    lock                    meccanismi per assicurare integrità della config, usando lock blocco altre sessioni netconf o snmp
-    unlock                  quando ho finito di fare, rilascio il dispositivo che potrà riaccettare altre richieste
+    
+    lock  unlock            meccanismi per assicurare integrità della config, usando lock blocco altre sessioni netconf o snmp
+                            quando ho finito di fare, rilascio il dispositivo che potrà riaccettare altre richieste
     create-subscription     
     notification
 
 YANG: data modeling language, definisce i dati scambiati tramite il protocollo netconf, quindi definisce struttura, sintassi, semantica dei dati, l'equivalente dello SMI in SNMP.
-YANG però è indipendente da NETCONF, quindi è facilmente convertibile in altri formati di codifica dei dati come XML o JSON, proprietà utile sfruttata dalla evoluzione di NETCONF
+Una volta definita la configurazione usando lo YANG, si effettua una conversione in XML fino a generale il pacchetto il finale
+YANG però è indipendente da NETCONF, quindi è facilmente convertibile in altri formati di codifica dei dati come JSON, proprietà utile sfruttata dalla evoluzione di NETCONF
 
 NETCONF -> RESTCONF
 rpc     -> REST API
 XML     -> JSON/YAML
 
 SNMP e NETCONF sono misure PASSIVE, ci permettono di collezionare statistiche aggregate sullo stato dei dispostivi ma non sempre è sufficiente.
-Questi protocolli lavorano su scale temporali dell'ordine del secondo o minuto, troppo lente per poter star dietro ad alcuni fenomeni di rete(alcuni attacchi durano solo qualche pacchetto processato nell'ordine dei microsecondi)
+Questi protocolli lavorano su scale temporali dell'ordine del secondo o minuto, troppo lente per poter star dietro ad alcuni fenomeni di rete(alcuni attacchi durano solo qualche pacchetto processato nell'ordine dei microsecondi),
+è per questo che si introducono tecniche di monitoraggio del traffico, molto più veloci, con tempi paragonabili a quelli dei pacchetti(nel senso del routing/forwarding e simili)

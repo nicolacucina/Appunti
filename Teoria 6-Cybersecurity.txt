@@ -1,0 +1,161 @@
+Con il termine cybersecurity si intende la protezione della informazione(salvata, trasmessa o processata) e sicurezza  delle rete(dispositivi e collegamenti di rete).
+Per quanto riguarda la sicurezza della informazione utilizziamo i seguenti termini:
+    -Confidenzialità
+    -Integrità
+    -Disponibilità
+    -Autenticità
+    -Responsabilità
+    -Non repudiabilità
+    -Affidabilità
+
+Mentre con sicurezza di rete intendiamo la protezione della rete e i dispositivi al suo interno da modifiche non autorizzate, dal danneggiamento intenzionale o accidentale, 
+e infine si vogliono assicurare delle prestazione come da specifica(sia nel caso nominale che in condizioni critiche)
+
+Confidenzialità: si vuole far si che i dati non siano disponibili a personale non autorizzato, si vuole proteggere la privacy degli utenti e delle informazioni.
+
+Integrità: per quanto riguarda i dati, si vuole assicurare che i dati siano 'quello che dicono di essere', nel senso che non sono state effettuate modifiche
+    accidentale o malevole. Per quanto riguarda i sistemi invece vogliamo assicurarci che funzionino come dovrebbero, sempre senza alcuna manipolazione esterna.
+
+Disponibilità: vogliamo che i dati e i servizi di rete siano disponibili agli utenti(non serve a niente avere il servizio più bello e sicuro del mondo se non funziona)
+
+Autenticità: gli individui coinvolti sono genuini, sono chi dicono di essere, perciò sono utenti fidati(sempre grazie a meccanismi di autenticazione)
+
+Responsabilità: dato che i sistemi non posso essere mai totalmente sicuri, occorre un meccanismo di responsabilità per determinare a chi fanno capo le azioni intraprese
+
+Problemi:
+    -La sicurezza non è mai semplice come sempre, si sottovaluta in problema,
+    -Occorre conoscere i potenziali attacchi al sistema per poterci difendere
+    -Occorre immaginazione per trovare nuove vie d'attacco(e di difesa)
+    -Occorre posizionare correttamente le misure di sicurezza
+    -Non basta utilizzare un protocollo o algoritmo 'sicuro'
+    -A chi attacca basta una vingola vulnerabilità per poter causare gravi danni, mentre il manager deve proteggere tutto
+    -Occorre monitoraggio costante, costoso
+    -Introduce meccanismi che rendono i processi meno efficienti
+
+Definizioni:
+    -Security Attack: ogni azione che compromette la sicurezza
+    -Meccanismo di sicurezza: un processo in grado di rilevare, prevenire o recuperare da un attacco
+    -Servizio di sicurezza: un servizio di comunicazione o di elaborazione che aumenta la sicurezza dei sistemi
+    -Minaccia: ogni evento che può potenzialmente avere un effetto negativo sul nostro sistema
+    -Attacco: attività malevola che 'pone in essere' una minaccia, cerca di rubare, bloccare l'accesso a, distruggere o modificare risorse computazionali o informative
+
+Classificazione attacchi:
+    -Passivi: cercano di apprendere informazioni sul bersaglio senza però avere alcun effetto
+    -Attivi: cercando di alterare il sistema
+
+Tra gli attacchi passivi troviamo:
+    -release of message contents: dopo aver catturato pacchetti, i loro contenuti sono rilasciati al pubblico
+    -analisi del traffico: si cercano pattern nel traffico(non importa se i pacchetti sono cifrati, emergono sempre pattern)
+
+Sono difficili da rilevare perchè l'attaccante non fa nulla che sia rilevabile, si limita a collezionare informazioni, quindi per fermare questi attacchi si parla prevalentemente di prevenzione
+
+Tra gli attacchi attivi troviamo:
+    -replay: si catturano pacchetti e si ritrasmettono, se non si utilizza un meccanismo per rilevare i duplicati può causare danni
+    -modifica dei pacchetti: pacchetti legittimi vengono modificati per ottenere un effetto non autorizzato
+    -impersonamento: l'attaccante pretende di essere qualcun altro
+    -DoS: si blocca l'accesso alle risorse o servizi del bersaglio
+
+Questi attacchi sono rilevabili dato che coinvolgono l'invio di pacchetti o la modifica di risorse, sono difficili da prevenire, perciò l'obiettivo è identificarli in fretta e rispondere in maniera appropriata
+
+Servizi di sicurezza:
+Ci permettono di implementare delle politiche di sicurezza, supportando uno o più requisiti di sicurezza(CIA + AAA) e sono a loro volta implementati da meccanismi di sicurezza.
+troviamo:
+    -Autenticazione: un servizio che si occupa di assicurare una comunicazione 'autentica', dove gli interlocutori sono veramente chi dicono di essere
+    -Controllo degli accessi: servizio che limita l'accesso agli host o ai servizi nella rete
+    -Confidenzialità dei dati: servizio che protegge i dati trasmessi dagli attacchi passivi
+    -Integrità dei dati: all'interno di una sessione, si accura che i pacchetti sono trasmessi senza duplicati, errori o modifiche, senza il concetto di sessione si assicura che i pacchetti non sono stati modificati
+    -Non repudiabilità: fa si che i pacchetti non possonano essere scartati o ignorati
+    -Disponibilità: assicura che il sistema sia accessibile ed utilizzabile
+
+Tra i meccanismi di sicurezza troviamo:
+    -algoritmi di crittografia
+    -meccanismi per l'integrità dei dati
+    -firma digitale
+    -scambio di info per l'autenticazione
+    -padding del traffico(per evitare riconoscimento di pattern)
+    -controllo del routing
+    -controllo degli accessi
+
+
+Firewall
+
+Dispositivo che isola porzioni della rete offrendo uno strato difensivo aggiuntivo.
+Solitamente viene utilizzato per schermare la rete interna dal rete di Internet, o per separare porzioni della rete interna.
+
+Obiettivi:  
+    -tutto il traffico deve passarci attraverso(qualsiasi altro collegamento deve essere bloccato o rimosso)
+    -tra tutto il traffico che arriva al firewall, solo il traffico autorizzato deve passare(chi è autorizza è definito localmente nel firewall)
+    -deve essere un dispositivo sicuro, non 'attaccabile'
+
+Diverse politiche per il firewalling:
+    -controllo di servizio: si decidono quali sono i servizi/protocolli accettati e quali vengono filtrati,
+    -controllo della direzione: si decide la direzione del traffico e da dove posso creare le richieste,
+    -controllo sugli tutenti: si decide quali utenti accettare e quali bloccare,
+    -controllo del comportamento: si decide come si devono usare le risorse(ho comportamento nominale e faccio anomaly detection)
+
+I firewall comunque non sono una difesa perfetta, esistono attacchi che li bypassano(se si usa una politica BYOD, bring your own device, porto un pc infetto dentro alla rete e questo comunica verso l'esterno, beaconing),
+se gli attacchi si svolgono all'interno della rete e non hanno bisogno di passare per il firewall si perde completamente l'efficacia.
+
+Categorie di Firewall:
+    -Packet filtering(stateless): sono definite delle regole che decidono come controllare il traffico, sono dispositivi statici perchè solitamente le regole non vengono create in maniera dinamica, facili da configurare ma meno flessibili
+    -Stateful inspection Firewall: si utilizza una tabella in cui vengono inserite entry per le connessioni accettate, le entry sono inserite o rimosse dinamicamente
+    -application-level Gateway: funzionamento tipo ssh, io cerco di connettermi, ssh chiede autenticazione, se non sono giuste la connessione viene bloccata
+    -circuit level gateway
+
+Altra categorizzazione:
+    -Firewall esterni: sono la prima linea di difesa del sistema
+    -Firewall interni: dentro alla nostra rete, vogliamo comunque gestire il traffico che supera il primo firewall, anche solo per 'monitorare' il traffico interno
+    -DMZ: sono server e servizi accessibili da internet, richiedono protezione aggiuntiva ma decono comunque permettere ad utenti esterni di accedervi
+
+
+Intrusion Detection System
+
+Definizioni:
+    -Intrusione: violazione delle politiche di sicurezza, legate a delle perdite di sicurezza delle CIA
+    -Rilevazione delle intrusioni: processo che colleziona informazioni sul traffico, cercando segni di Intrusione
+    -IDS: software o hardware che rilevano le intrusioni generando allarmi e notifiche
+
+Un IDS può essere utilizzato su un singolo host(con un funzionamento simile ad un AV) o può riguardare tutta la rete.
+
+3 componenti logiche:
+    -sensori: collezionano i dati(paccheti, log, flussi) ed esportano informazioni all'analizzatore
+    -analizzatore: riceve input dai vari sensori e determina se è avvenuta una intrusione
+    -user interface: permette al manager di vedere l'output dell'analizzatore e di giudicarne il comportamento
+
+IDS è una componente aggiuntiva a tutte quelle elencate sopra(autenticazione, controllo degli accessi, firewalling, etc.), mi permette di rilevare attacchi che superano 
+tutti gli altri layer di sicurezza e bloccarli prima che causino troppi danni.
+Come per i firewall, posso piazzare IDS in vari punti della rete in base a cosa voglio controllare, posso posizionarli prima/dopo firewall per vedere quali attacchi arrivano e quali riesce a filtrare, mi
+aiuta nel configurare i dispositivi in maniera appropriata sapendo quali sono gli attacchi che possiamo subire.
+
+Come funzionano? meccanismo di firma, gli IDS osservano i pacchetti(tramite i sensori), i pacchetti 'interessanti' vengono analizzati con :
+    -firme basate sulle stringhe: possono essere payload particolari associati a degli attacchi, o url strani
+    -firme basate sulle porte: accessi a porte strane possono essere attacchi
+    -firme basate sugli header: header configurati in certe modalità possono essere sospetti(tipo TCP con flag SYN e FIN alzate contemporaneamte)
+
+Due approcci IDS:
+    -Misuse detection: ho un database di attacchi noti, cerco di riconoscerli, tutto quello che non è un attacco è traffico benigno
+    -Anomaly detection: ho a disposizione solo traffico normale, tutto quello che non è benigno è una anomalia
+
+Entrambi gli approcci fanno l'assunzione che le tue tipologie di traffico(attacco/benigno, normale/anomalo) siano distinguibili.
+questo generalmente è vero, ma ci sono sovrapposizioni tra le due classi, perciò occorre analizzare i falsi positivi e negativi.
+nel caso di anomaly detection, un falso negativo è traffico normale visto come anomalo, mentre un falso positivo è traffico anomalo visto come normale, stesso ragionamento con attacco/benigno.
+le due classi non hanno lo stesso peso, è molto più importante riconoscere correttamente un attacco e misclassificare un utente in più.
+col tempo però la situazione può variare, il traffico benigno è pressochè statico, ma il traffico maligno cerca di avvicinarsi sempre di più al traffico normale per non essere riconosciuto
+
+DDoS:
+Distributed Denial of Service, attacchi per noi difficili da rilevare correttamente da magari un burst nel traffico, il bersaglio vede solamente tanti flussi di piccole dimensioni proveniente da tanti host diversi.
+occorre:
+    -un software per effettuare l'attacco, deve essere abbastanza generalizzato per poter essere eseguito in più ambienti(OS), deve sapersi nascondere agli AV dell'host e deve avere un meccanismo di attivazione
+    -il bersaglio deve essere vulnerabile per poter essere attaccato, e questa vulnerabilità va individuata
+    -il processo deve essere periodico-iterativo per poter infettare il numero maggiore di macchine(si può usare una hit list con indirizzi ip da provare ad infettare, uso la topologia della rete per infettare altre macchine localmente)
+
+Quando l'attaccante decide di attaccare, si utilizza uno schema piramidale, l'attaccante 'controlla' direttamente degli 'zombie primari', che utilizzano degli 'zombie secondari' per lanciare gli attacchi verso la vittima.
+L'obiettivo è di rendere il servizio o la rete vittima non utilizzando, saturando le risorse di calcolo o di rete.
+
+Un altro schema è quello che usa i riflettori, ovvero l'attaccante usa ancora zombie primari e secondari, ma questi fanno attacchi di mirroring, ovvero inviano pacchetti a server well known, che poi rispondono inviando traffico al bersaglio.
+più difficile da rilevare perchè il bersaglio vede solo connessioni verso server noti che non sono maligni(meccanismo visto a lezione di reflection con ip spoofing)
+
+Come possiamo difenderci?
+    -Prevenzione, controllando il traffico prima dell'attacco per evitarlo, oppure con meccanismi di scalabilità dinamica del server, tutto questo senza disturbare il traffico legittimo(operazioni di management trasparenti)
+    -durante l'attacco devo riuscire ad individuarlo per capire cosa filtrare, serve monitoraggio costante per poterci riuscire
+    -risalire all'attaccante risalendo la gerarchia degli zombie e prendere azioni un volta trovato
