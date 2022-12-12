@@ -28,7 +28,7 @@ Observe----------React
 All'interno della nostra rete, abbiamo una serie di Managed Devices(router, switch e altre componenti). 
 All'interno dei devices si trovano Managed Objects, che rappresentano il comportamento(un aspetto) di una componente.
 Questi Object sono gestiti da degli Agent, dei processi che sanno leggere i dati provenienti dal dispositivo(anche a livello circuitale) e creano gli Object di conseguenza.
-Gli Agent fanno riferimento ad una Managing Entity, un manager che osserva la rete e in funzione delle informazioni ricevuti da prendere delle decisioni, dopo aver interrogato gli agent salvano i dati all'interno di un MIB, Management Information Base.
+Gli Agent fanno riferimento ad una Managing Entity, un manager che osserva la rete e in funzione delle informazioni ricevute(salvate in un database personale) da prendere delle decisioni, dopo aver interrogato gli agent salvano i dati all'interno di un MIB, Management Information Base.
 Le informazioni che troviamo in questo database sono di sola lettura, dato che sono log, pacchetti inviati/ricevuti, funziona si/no, etc.
 
 Lo scambio di dati tra Agent, Manager e MIB fa uso di protocolli specifici per il management, i primi ad essere stati utilizzati furono CMIP(Common Management Information Protocol) e SNMP(Simple Network Management Protocol)
@@ -36,7 +36,7 @@ Lo scambio di dati tra Agent, Manager e MIB fa uso di protocolli specifici per i
 il de facto standard utilizzato al momento è SNMP v3, nato come evoluzione di SGMP(Simple Gateway Management Protocol), vogliamo creare un MIB(un database) il più indipendente possibile dal protocollo utilizzato per crearlo.
 
 4 componenti fondamentali di SNMP:
-    -MIB: rete di database di dati eterogenei come contatori, range, valori booleani, stringhe, informazioni sullo stato, etc. ,
+    -MIB(Management Information Bae): rete di database di dati eterogenei come contatori, range, valori booleani, stringhe, informazioni sullo stato, etc., ogni device ha il suo
     -SMI: Structure of Management Information, come sono definiti i dati, si occupa della creazione degli Object all'interno dei devices,
     -SNMP: il protocollo utilizzato nello scambio di informazioni
     -Sicurezza, supportata solo dalla versione 3

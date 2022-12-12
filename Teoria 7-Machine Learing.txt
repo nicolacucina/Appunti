@@ -26,3 +26,69 @@ Va fatta EDA per ridurre il più possibile la ridondanza nella feature e tenere 
 
 Modelli regressivi utili per predirre il futuro se ci sono pattern ciclici nel traffico
 Altri approcci usano reti neurali(per lavorare su un singolo parametro), molto più sensibili agli outlier in fase di training(altrimenti inserire nel modello parametri per inseguirli)
+Oppure usiamo SMV(per trovare la boundry tra le classi) o alberi decisionali(nelle loro varie versioni)
+
+Performance 
+accuracy = cosa ho predetto bene/tutto quanto
+precision = di quello che ho predetto vero/ quanto è veramente vero? TP/TP+FP
+recall =  di quello che è veramente vero, quando ho predetto bene? TP/TP+FN
+
+Cerchiamo di mantenere FP e FN il più bassi possibile
+
+Altre Performance che possiamo utilizzare, metriche statische, solitamente sono un pò semplicistiche ma sono facilmente spiegabili, proprietà importante per noi, aiuta a comprendere costa sta accadendo
+Media 'classica' o mobile(per tener conto del tempo)
+
+Possiamo assumere che i nostri parametri abbiano distribuzione Gaussiana(pdf), cosa che ci aiuta a fare ipotesi sulla loro media/varianza.
+la Media però è un parametro polarizzato verso i valori molto grandi o piccoli.
+la mediana invece è meno polarizzata, 50% campioni più piccoli e 50% più grandi, non importa quanto siano più piccoli o più grandi.
+posso definire la deviazione dalla mediana.
+
+Goodness-of-fit
+Cerco delle distribuzioni note che funzionino per spiegare i miei dati -> posso cercare una pdf congiunta.
+nel caso di gaussiana multivariata, dove ho più parametri gaussiani, analizzando i grafici/curve di livello delle pdf posso prendere delle decisioni sulla posizione della threshold per la classificazione
+
+Alberi decisionali
+
+molto usati nelle reti perchè sono molto spiegabili e hanno buone prestazioni.
+Utilizzano feature numeriche, non quelle continue, cosa che funziona bene per la maggior parte dei dati del networking, se abbiamo feature continue possiamo definire degli intervalli significativi e renderla categorica/numerica.
+Si comincia andando a costruire l'albero, scegliendo il nodo radice. 
+A questo sarà associata la feature più informativa(basandosi sul concetto di entropia della informazione).
+Trovato il nodo root, ci muoviamo verso i figli sulla base del valore assunto dal campione per quella feature.
+Si continua così muovendosi lungo l'albero finchè non si raggiunge un nodo foglia, a cui è associata la classificazione da dare al campione
+
+Come troviamo le feature da associare ad ogni nodo dell'albero?
+
+Calcoliamo:
+D = Dataset
+A = Attributi
+P(w_j) = Probabilità che un campione appartenga ad una certa classe, stimata a partire dal dataset come num.occorrenze di un classe/num.totale campioni 
+D(v) = Dataset dove l'attributo A assume il valore v
+i(D(v)) = incertezza associata al Dataset D(v), numericamente è uguale all'entropia
+
+Entropia del Dataset E(D)= -Σ (P(w_j) * log2(P(w_j)))
+						(j∈Dataset) 
+ 
+Guadagno G(D, A) = E(D) -Σ (|D(v)| / |D|) * i(D(v))
+		           (v∈values(A))
+
+Ogni volta sceglieremo la feature con il maggiore guadagno, in modo da ridurre l'entropia il più possibile fino ad arrivare ad una certezza.
+
+Problemi degli alberi:
+    -Overfitting, risolto andando a fare operazioni di 'pruning', taglio dei pezzi agli alberi dopo l'addestramento, o durante l'addestramento arresto un pò prima l'esecuzione dell'algoritmo cosi da ridurre l'overfitting(meccanismo di validazione per scegliere i tagli migliori)
+    -Molto sensibili agli errori, occorre un dataset 'pulito'
+    -instabilità, lo abbiamo visto a lezione, se cambia un campione può cambiare l'intera struttura dell'albero, mostra come l'albero rimane sempre legato ai dati, la capacità di astrazione rimane limitata
+
+Un altro vantaggio degli alberi decisionali è che si traducono molto bene in regole iptables, permettondoci di implementarlo come regole sequenziali dove man mano verifico il valore delle varie features
+
+Random Forest
+Vogliono tenere tutti i vantaggi degli alberi ma risolvendone i problemi, bypassa i problemi di overfitting e instabilità utilizzando più alberi.
+ogni albero ha un numero di feature che è massimo pari alla radice del num. totale delle feature, e si addestra solo su una porzione del dataset(campionamento con sostituzione, n campioni totali ma solo d sono diversi, gli altri sono loro copie, per il meccanismo di entropia)0
+La classificazione avviene come una votazione per maggioranza tra le classificazioni di tutti gli alberi. Quello che guadagno in prestazioni e risoluzione problemi lo perdo però in spiegabilità, diventa tutto più oscuro a noi .
+Ogni addestramento può essere eseguito in parallelo, migliorando ancora di più le prestazioni
+
+Reti neurali
+
+%addestro autoencoder solo su taffico benigno(riconosciuto dalla label, tecnica supervisionata)
+%ora la rete neurale sa cosa sia traffico normale e sa riconoscere bene quale sia il traffico non normale -> attacchi
+%una volta trovati i campioni di attacco, come li distinguo tra di loro? KNN sembra l'algoritmo che separa meglio gli attacchi probe dai DoS
+%usare un autoencoder come classificare traffico benigno/anomalo ci protegge anche da zero day attacks meglio di altri algoritmi tipo alberi decisionali o random forest, che hanno meno capacità di astrazione

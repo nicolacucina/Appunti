@@ -208,7 +208,7 @@ Problemi INT:
 -alto carico computazionale per la modifica dei pacchetti -> peggioramento delle prestazioni
 -alta sensibilità alla perdita dei pacchetti
 
-Framework P4(programming protocol indipendent packet processor)
+Framework P4(programming protocol indipendent packet processor), un modo per poter fare la modifica dei pacchetti che richiede l'INT
 
 un linguaggio di programmazione specifico per i dispositivi di rete, permette di avere un piano dati utente programmabile,
 in base a delle regole di match(algoritmo di classificazione) sono applicate delle modifiche, e si utilizzano dei buffer interni per salvare i pacchetti in attesa delle modifiche di input e di output

@@ -52,7 +52,7 @@ Sono difficili da rilevare perchè l'attaccante non fa nulla che sia rilevabile,
 Tra gli attacchi attivi troviamo:
     -replay: si catturano pacchetti e si ritrasmettono, se non si utilizza un meccanismo per rilevare i duplicati può causare danni
     -modifica dei pacchetti: pacchetti legittimi vengono modificati per ottenere un effetto non autorizzato
-    -impersonamento: l'attaccante pretende di essere qualcun altro
+    -impersonamento: l'attaccante pretende di essere qualcun altro(man in the middle, arp poisoning o altri meccanismi simili)
     -DoS: si blocca l'accesso alle risorse o servizi del bersaglio
 
 Questi attacchi sono rilevabili dato che coinvolgono l'invio di pacchetti o la modifica di risorse, sono difficili da prevenire, perciò l'obiettivo è identificarli in fretta e rispondere in maniera appropriata
@@ -100,7 +100,7 @@ Categorie di Firewall:
     -Packet filtering(stateless): sono definite delle regole che decidono come controllare il traffico, sono dispositivi statici perchè solitamente le regole non vengono create in maniera dinamica, facili da configurare ma meno flessibili
     -Stateful inspection Firewall: si utilizza una tabella in cui vengono inserite entry per le connessioni accettate, le entry sono inserite o rimosse dinamicamente
     -application-level Gateway: funzionamento tipo ssh, io cerco di connettermi, ssh chiede autenticazione, se non sono giuste la connessione viene bloccata
-    -circuit level gateway
+    -circuit level gateway: il filtraggio avviene al livello del protocollo di trasporto
 
 Altra categorizzazione:
     -Firewall esterni: sono la prima linea di difesa del sistema
@@ -132,15 +132,15 @@ Come funzionano? meccanismo di firma, gli IDS osservano i pacchetti(tramite i se
     -firme basate sulle porte: accessi a porte strane possono essere attacchi
     -firme basate sugli header: header configurati in certe modalità possono essere sospetti(tipo TCP con flag SYN e FIN alzate contemporaneamte)
 
-Due approcci IDS:
+Cosa cerchiamo di rilevare? due approcci IDS:
     -Misuse detection: ho un database di attacchi noti, cerco di riconoscerli, tutto quello che non è un attacco è traffico benigno
-    -Anomaly detection: ho a disposizione solo traffico normale, tutto quello che non è benigno è una anomalia
+    -Anomaly detection: ho a disposizione solo traffico normale, tutto quello che non è benigno è una anomalia(buono contro zero-day attacks)
 
-Entrambi gli approcci fanno l'assunzione che le tue tipologie di traffico(attacco/benigno, normale/anomalo) siano distinguibili.
+Entrambi gli approcci fanno l'assunzione che le tue tipologie di traffico(attacco/benigno, normale/anomalo) siano distinguibili(in senso statistico, con pdf diverse).
 questo generalmente è vero, ma ci sono sovrapposizioni tra le due classi, perciò occorre analizzare i falsi positivi e negativi.
 nel caso di anomaly detection, un falso negativo è traffico normale visto come anomalo, mentre un falso positivo è traffico anomalo visto come normale, stesso ragionamento con attacco/benigno.
 le due classi non hanno lo stesso peso, è molto più importante riconoscere correttamente un attacco e misclassificare un utente in più.
-col tempo però la situazione può variare, il traffico benigno è pressochè statico, ma il traffico maligno cerca di avvicinarsi sempre di più al traffico normale per non essere riconosciuto
+col tempo però la situazione può variare, il traffico benigno è pressochè statico, ma il traffico maligno cerca di avvicinarsi sempre di più al traffico normale per non essere riconosciuto, per questo devo tracciare una soglia e prendere una decisione 
 
 DDoS:
 Distributed Denial of Service, attacchi per noi difficili da rilevare correttamente da magari un burst nel traffico, il bersaglio vede solamente tanti flussi di piccole dimensioni proveniente da tanti host diversi.
