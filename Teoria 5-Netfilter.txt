@@ -24,7 +24,7 @@ altrimenti, in ogni chain possiamo definire una serie di regole specifiche, ognu
 
                         packet in
                             |
-            ________________|_______________
+             ______>________|________>_____
             |                               |
     nat-POSTROUTING                  mangle-PREROUTING
             |                               |
@@ -38,6 +38,6 @@ altrimenti, in ogni chain possiamo definire una serie di regole specifiche, ognu
             |                  |                          |
     ROUTING module        filter-INPUT            filter-FORWARD
             |                   |                         |
-            |__Firewall Reply___|                  mangle-POSTROUTING
+            |__Firewall Reply_<_|                  mangle-POSTROUTING
                                                           |
                                                    nat-POSTROUTING

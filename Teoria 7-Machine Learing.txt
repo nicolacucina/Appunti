@@ -5,6 +5,8 @@ Se mi aspetto che il comportamento futuro rimanga simile a quello attuale, vogli
 Se ho dataset sbilanciati questo approccio non funziona, l'algoritmo non riesce ad apprendere bene come sia fatto un attacco, allora posso pensare di usare solo la porzione di traffico normale
 e addestrare per fare anomaly detection(che funziona pure meglio contro zero day attacks).
 
+La separazione tra le classi che fa IDS avviene sulla base di una metrica misurabile scelta a priori, si lavora con le pdf del traffico benigno/anomalo
+
 Alcuni questioni:  
     -come decido la threshold tra le due classi? non possiamo farlo a caso quindi occorre un meccanismo per trovarla
     -applico la threshold indiscriminatamente a tutti gli utenti? non dovrei
@@ -12,8 +14,7 @@ Alcuni questioni:
     -in tutto questo, che prestazioni offre un metodo con soglia? un sola soglia è poco robusto,
     posso pensare di creare un messanismo multisoglia con pericolosità incrementale, cosi posso in qualche modo 'filtrare' le anomalie
 
-
-Attacchi noti:
+Attacchi noti che vogliamo individuare:
     probe: scansione di rete per acquisire informazioni
     r2l: dall'esterno cercano di entrare nei nodi interni alla rete
     u2r: si cerca di passare da privilegi utenti a privilegi root(in una escalation che segue la scaletta)
@@ -25,8 +26,8 @@ Altre feature importanti sono: durata della sessione, tipo di protocollo utilizz
 Va fatta EDA per ridurre il più possibile la ridondanza nella feature e tenere le migliori senza perdere informazione(altrimenti avrei troppe feature a considerare ogni cosa ed esplode la complessità)
 
 Modelli regressivi utili per predirre il futuro se ci sono pattern ciclici nel traffico
-Altri approcci usano reti neurali(per lavorare su un singolo parametro), molto più sensibili agli outlier in fase di training(altrimenti inserire nel modello parametri per inseguirli)
-Oppure usiamo SMV(per trovare la boundry tra le classi) o alberi decisionali(nelle loro varie versioni)
+Altri approcci usano reti neurali(per lavorare su un singolo parametroo più di uno, sono abbastanza potenti per poterlo fare),
+ SMV(per trovare la boundry tra le classi) o alberi decisionali(nelle loro varie versioni)
 
 Performance 
 accuracy = cosa ho predetto bene/tutto quanto
@@ -50,7 +51,7 @@ nel caso di gaussiana multivariata, dove ho più parametri gaussiani, analizzand
 Alberi decisionali
 
 molto usati nelle reti perchè sono molto spiegabili e hanno buone prestazioni.
-Utilizzano feature numeriche, non quelle continue, cosa che funziona bene per la maggior parte dei dati del networking, se abbiamo feature continue possiamo definire degli intervalli significativi e renderla categorica/numerica.
+Utilizzano feature numeriche, cosa che funziona bene per la maggior parte dei dati del networking, se abbiamo feature continue possiamo definire degli intervalli significativi e renderla categorica/numerica.
 Si comincia andando a costruire l'albero, scegliendo il nodo radice. 
 A questo sarà associata la feature più informativa(basandosi sul concetto di entropia della informazione).
 Trovato il nodo root, ci muoviamo verso i figli sulla base del valore assunto dal campione per quella feature.
@@ -87,6 +88,24 @@ La classificazione avviene come una votazione per maggioranza tra le classificaz
 Ogni addestramento può essere eseguito in parallelo, migliorando ancora di più le prestazioni
 
 Reti neurali
+
+Algoritmi di machine learning che cercano di emulare il funzionamento dei neuroni umani.
+Nella versione più semplice abbiamo:
+    -layer di input, dove si trovano tutte le feature
+    -hidden layer, dove si trovano tutti neuroni, ognuno è legate agli input tramite degli archi prestazioni
+    -l'output è ottenuto come combinazione delle funzioni di attivazione dei neuroni(funz. non lineari)
+
+Solitamente vogliamo algoritmi spiegabili per giustificare le nostre scelte.
+Ma gli algoritmi visti (KNN, SVM, Alberi decisionali o Random Forest) per quanto sono spiegabili hanno dei problemi:
+    -KNN è il migliore per distinguere gli attacchi tra di loro, ma ha delle prestazioni troppo lente
+    -gli altri algoritmi sono più performanti computazionalmente, ma hanno performance peggiori a causa della confusione tra attacchi probe e dos
+
+Le reti neurali ci permettono di risolvere questi problemi, abbiamo comunque una fase di training pesante per determinare tutti i vari parametri, ma in fase di testing dobbiamo fare solo calcoli matriciali molto veloci,
+e grazie al gran numero di parametri abbiamo un modello con una grande capacità espressiva, permette al modello di trovare aspetti più fini del problema.
+Questo ragionamento viene estremizzato quando parliamo di deep neural network, dove si ha un numero di hidden >= 3.
+
+A causa di tutta questa potenza espressiva però le NN tendono ad overfittare il dataset, perciò si devono usare tecniche simili a quelle usate dalla random forest(dataset ridotto e feature ridotte).
+Vanishing gradient: dato che la maggior parte delle funzioni di attivazione tendono a saturare, il gradiente tende ad azzerarsi, portando l'algoritmo a non convergere.
 
 %addestro autoencoder solo su taffico benigno(riconosciuto dalla label, tecnica supervisionata)
 %ora la rete neurale sa cosa sia traffico normale e sa riconoscere bene quale sia il traffico non normale -> attacchi

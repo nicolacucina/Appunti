@@ -1,12 +1,15 @@
 Si comincia da TCPdump, comando dei sistemi Unix che permette di interagire con il traffico che passa attraverso una interfaccia.
-Si possono effettuare operazione di cattura e/o filtraggio del traffico.
+Si possono effettuare operazione di cattura e/o filtraggio del traffico, solitamente usate in ambienti in cui non lavora l'essere umano.
 
 Sintassi del comando:
     sudo tcpdump [options] [filter expressions]
+
+    alcune opzioni:
     -i, specifica l'interfaccia su cui catturare/filtrare,
     -w, scrive in un file il traffico,
     -r, legge un trace file con traffico salvato in precedenza.
 
+    alcune espressioni di filtraggio, si possono combinare con AND e OR
     "udp", cattura traffico udp
     "tcp", cattura traffico tcp
     "[dst/src] port 53", cattura traffico sulla porta specificata, posso catturarlo sia unidirezionale che bidirezionale
@@ -73,8 +76,8 @@ Struttura dell'NPF
         |
     Capture app.
 
-Buffer Kernel gestiti in maniera circolare, quindi c'è una dimensione massima consentita per il salvataggio dati, 
-se si supera si comincia a sovrascrivere i dati più vecchi.
+Buffer Kernel gestiti in maniera circolare, un porzione è mantenuta in RAM e funge da cache a più alta velocità, mentre il resto è mantenuto sul disco.
+c'è una dimensione massima consentita per il salvataggio dati, se si supera si comincia a sovrascrivere i dati più vecchi.
 
 Struttura interna di wireshark
 
@@ -97,11 +100,11 @@ il capture engine)
     capture engine
      |
      |
-    WinPcap/libpcap(librerie esterne per cattura e filtraggio pacchetti in vari ambienti
+    WinPcap/libpcap(librerie esterne per cattura e filtraggio pacchetti in vari ambienti(OS),
     il filtraggio effettuato in questo punto è di basso livello)
 
 Definizione Modalità promiscua: 
 Normalmente l'interfaccia di rete effettua un filtraggio automatico se arrivano pacchetti non destinati a lei, 
 mentre vengono passati agli altri layer della pila protocollari o pacchetti broadcast o quelli dove l'indirizzo corrisponde.
 La modalità promiscua fa si che il driver accetti ogni pacchetto, senza preoccuparsi se sia per noi o no.
-In questo modo con wireshark possiamo analizzare 'tutto' il traffico, e non quello destinato a noi, aiutandoci nel monitoraggio, analisi e diagnostica della rete.
+In questo modo con wireshark possiamo analizzare 'tutto' il traffico, e non solo quello destinato a noi, aiutandoci nel monitoraggio, analisi e diagnostica della rete.

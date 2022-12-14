@@ -1,26 +1,17 @@
 Con il termine cybersecurity si intende la protezione della informazione(salvata, trasmessa o processata) e sicurezza  delle rete(dispositivi e collegamenti di rete).
 Per quanto riguarda la sicurezza della informazione utilizziamo i seguenti termini:
-    -Confidenzialità
-    -Integrità
-    -Disponibilità
-    -Autenticità
-    -Responsabilità
-    -Non repudiabilità
-    -Affidabilità
+
+    -Confidenzialità: si vuole far si che i dati non siano disponibili a personale non autorizzato, si vuole proteggere la privacy degli utenti e delle informazioni.
+    -Integrità: per quanto riguarda i dati, si vuole assicurare che i dati siano 'quello che dicono di essere', nel senso che non sono state effettuate modifiche
+                accidentale o malevole. Per quanto riguarda i sistemi invece vogliamo assicurarci che funzionino come dovrebbero, sempre senza alcuna manipolazione esterna.
+    -Disponibilità: vogliamo che i dati e i servizi di rete siano disponibili agli utenti(non serve a niente avere il servizio più bello e sicuro del mondo se non funziona)
+    -Autenticità: gli individui coinvolti sono genuini, sono chi dicono di essere, perciò sono utenti fidati(sempre grazie a meccanismi di autenticazione)
+    -Responsabilità: dato che i sistemi non posso essere mai totalmente sicuri, occorre un meccanismo di responsabilità per determinare a chi fanno capo le azioni intraprese
+    -Non repudiabilità: non posso ignorare un pacchetto se rispetta i requisiti precedenti^ (se invece non sono rispettati, posso anche pensare che il pacchetto provenga da un attaccante o una anomalia e scartarlo)
+    -Affidabilità: robustezza del sistema
 
 Mentre con sicurezza di rete intendiamo la protezione della rete e i dispositivi al suo interno da modifiche non autorizzate, dal danneggiamento intenzionale o accidentale, 
 e infine si vogliono assicurare delle prestazione come da specifica(sia nel caso nominale che in condizioni critiche)
-
-Confidenzialità: si vuole far si che i dati non siano disponibili a personale non autorizzato, si vuole proteggere la privacy degli utenti e delle informazioni.
-
-Integrità: per quanto riguarda i dati, si vuole assicurare che i dati siano 'quello che dicono di essere', nel senso che non sono state effettuate modifiche
-    accidentale o malevole. Per quanto riguarda i sistemi invece vogliamo assicurarci che funzionino come dovrebbero, sempre senza alcuna manipolazione esterna.
-
-Disponibilità: vogliamo che i dati e i servizi di rete siano disponibili agli utenti(non serve a niente avere il servizio più bello e sicuro del mondo se non funziona)
-
-Autenticità: gli individui coinvolti sono genuini, sono chi dicono di essere, perciò sono utenti fidati(sempre grazie a meccanismi di autenticazione)
-
-Responsabilità: dato che i sistemi non posso essere mai totalmente sicuri, occorre un meccanismo di responsabilità per determinare a chi fanno capo le azioni intraprese
 
 Problemi:
     -La sicurezza non è mai semplice come sempre, si sottovaluta in problema,
@@ -28,7 +19,7 @@ Problemi:
     -Occorre immaginazione per trovare nuove vie d'attacco(e di difesa)
     -Occorre posizionare correttamente le misure di sicurezza
     -Non basta utilizzare un protocollo o algoritmo 'sicuro'
-    -A chi attacca basta una vingola vulnerabilità per poter causare gravi danni, mentre il manager deve proteggere tutto
+    -A chi attacca basta una singola vulnerabilità per poter causare gravi danni, mentre il manager deve proteggere tutto
     -Occorre monitoraggio costante, costoso
     -Introduce meccanismi che rendono i processi meno efficienti
 
@@ -56,6 +47,25 @@ Tra gli attacchi attivi troviamo:
     -DoS: si blocca l'accesso alle risorse o servizi del bersaglio
 
 Questi attacchi sono rilevabili dato che coinvolgono l'invio di pacchetti o la modifica di risorse, sono difficili da prevenire, perciò l'obiettivo è identificarli in fretta e rispondere in maniera appropriata
+
+DDoS:
+Distributed Denial of Service, attacchi per noi difficili da rilevare correttamente da magari un burst nel traffico, il bersaglio vede solamente tanti flussi di piccole dimensioni proveniente da tanti host diversi.
+occorre:
+    -un software per effettuare l'attacco, deve essere abbastanza generalizzato per poter essere eseguito in più ambienti(OS), deve sapersi nascondere agli AV dell'host e deve avere un meccanismo di attivazione
+    -il bersaglio deve essere vulnerabile per poter essere attaccato, e questa vulnerabilità va individuata
+    -il processo deve essere periodico-iterativo per poter infettare il numero maggiore di macchine(si può usare una hit list con indirizzi ip da provare ad infettare, uso la topologia della rete per infettare altre macchine localmente)
+
+Quando l'attaccante decide di attaccare, si utilizza uno schema piramidale, l'attaccante 'controlla' direttamente degli 'zombie primari', che utilizzano degli 'zombie secondari' per lanciare gli attacchi verso la vittima.
+L'obiettivo è di rendere il servizio o la rete vittima non utilizzando, saturando le risorse di calcolo o di rete.
+
+Un altro schema è quello che usa i riflettori, ovvero l'attaccante usa ancora zombie primari e secondari, ma questi fanno attacchi di mirroring, ovvero inviano pacchetti a server well known, che poi rispondono inviando traffico al bersaglio.
+più difficile da rilevare perchè il bersaglio vede solo connessioni verso server noti che non sono maligni(meccanismo visto a lezione di reflection con ip spoofing)
+
+Come possiamo difenderci?
+    -Prevenzione, controllando il traffico prima dell'attacco per evitarlo, oppure con meccanismi di scalabilità dinamica del server, tutto questo senza disturbare il traffico legittimo(operazioni di management trasparenti)
+    -durante l'attacco devo riuscire ad individuarlo per capire cosa filtrare, serve monitoraggio costante per poterci riuscire
+    -risalire all'attaccante risalendo la gerarchia degli zombie e prendere azioni un volta trovato
+
 
 Servizi di sicurezza:
 Ci permettono di implementare delle politiche di sicurezza, supportando uno o più requisiti di sicurezza(CIA + AAA) e sono a loro volta implementati da meccanismi di sicurezza.
@@ -141,21 +151,3 @@ questo generalmente è vero, ma ci sono sovrapposizioni tra le due classi, perci
 nel caso di anomaly detection, un falso negativo è traffico normale visto come anomalo, mentre un falso positivo è traffico anomalo visto come normale, stesso ragionamento con attacco/benigno.
 le due classi non hanno lo stesso peso, è molto più importante riconoscere correttamente un attacco e misclassificare un utente in più.
 col tempo però la situazione può variare, il traffico benigno è pressochè statico, ma il traffico maligno cerca di avvicinarsi sempre di più al traffico normale per non essere riconosciuto, per questo devo tracciare una soglia e prendere una decisione 
-
-DDoS:
-Distributed Denial of Service, attacchi per noi difficili da rilevare correttamente da magari un burst nel traffico, il bersaglio vede solamente tanti flussi di piccole dimensioni proveniente da tanti host diversi.
-occorre:
-    -un software per effettuare l'attacco, deve essere abbastanza generalizzato per poter essere eseguito in più ambienti(OS), deve sapersi nascondere agli AV dell'host e deve avere un meccanismo di attivazione
-    -il bersaglio deve essere vulnerabile per poter essere attaccato, e questa vulnerabilità va individuata
-    -il processo deve essere periodico-iterativo per poter infettare il numero maggiore di macchine(si può usare una hit list con indirizzi ip da provare ad infettare, uso la topologia della rete per infettare altre macchine localmente)
-
-Quando l'attaccante decide di attaccare, si utilizza uno schema piramidale, l'attaccante 'controlla' direttamente degli 'zombie primari', che utilizzano degli 'zombie secondari' per lanciare gli attacchi verso la vittima.
-L'obiettivo è di rendere il servizio o la rete vittima non utilizzando, saturando le risorse di calcolo o di rete.
-
-Un altro schema è quello che usa i riflettori, ovvero l'attaccante usa ancora zombie primari e secondari, ma questi fanno attacchi di mirroring, ovvero inviano pacchetti a server well known, che poi rispondono inviando traffico al bersaglio.
-più difficile da rilevare perchè il bersaglio vede solo connessioni verso server noti che non sono maligni(meccanismo visto a lezione di reflection con ip spoofing)
-
-Come possiamo difenderci?
-    -Prevenzione, controllando il traffico prima dell'attacco per evitarlo, oppure con meccanismi di scalabilità dinamica del server, tutto questo senza disturbare il traffico legittimo(operazioni di management trasparenti)
-    -durante l'attacco devo riuscire ad individuarlo per capire cosa filtrare, serve monitoraggio costante per poterci riuscire
-    -risalire all'attaccante risalendo la gerarchia degli zombie e prendere azioni un volta trovato

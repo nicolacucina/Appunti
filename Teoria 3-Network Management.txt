@@ -1,5 +1,5 @@
 All'interno delle reti troviamo centinaia o migliaia di dispositivi da dover monitorare, controllare e analizzare, in particolare si vuole: 
-    -Rilevare errori e FAULT di componenti,
+    -Rilevare errori di componenti,
     -Monitorare host, dispositivi e traffico,
     -Rilevare rapidi cambiamenti nelle tabelle di routing(per evitare che inizino a flippare),
     -Monitorare le SLA, i termini d'uso dei servizi,
@@ -27,23 +27,23 @@ Observe----------React
 
 All'interno della nostra rete, abbiamo una serie di Managed Devices(router, switch e altre componenti). 
 All'interno dei devices si trovano Managed Objects, che rappresentano il comportamento(un aspetto) di una componente.
-Questi Object sono gestiti da degli Agent, dei processi che sanno leggere i dati provenienti dal dispositivo(anche a livello circuitale) e creano gli Object di conseguenza.
-Gli Agent fanno riferimento ad una Managing Entity, un manager che osserva la rete e in funzione delle informazioni ricevute(salvate in un database personale) da prendere delle decisioni, dopo aver interrogato gli agent salvano i dati all'interno di un MIB, Management Information Base.
+Questi Object sono gestiti da degli Agent, dei processi che sanno leggere i dati provenienti dal dispositivo(anche a livello circuitale) e creano gli Object di conseguenza(a livello logico).
+Gli Agent fanno riferimento ad una Managing Entity, un manager che osserva la rete e dopo aver interrogato gli agent, che salvano i dati all'interno di un MIB, Management Information Base, in funzione delle informazioni ricevute(salvate in un database personale) sa prendere delle decisioni, 
 Le informazioni che troviamo in questo database sono di sola lettura, dato che sono log, pacchetti inviati/ricevuti, funziona si/no, etc.
 
 Lo scambio di dati tra Agent, Manager e MIB fa uso di protocolli specifici per il management, i primi ad essere stati utilizzati furono CMIP(Common Management Information Protocol) e SNMP(Simple Network Management Protocol)
 
-il de facto standard utilizzato al momento è SNMP v3, nato come evoluzione di SGMP(Simple Gateway Management Protocol), vogliamo creare un MIB(un database) il più indipendente possibile dal protocollo utilizzato per crearlo.
+il de facto standard utilizzato al momento è SNMP v3, nato come evoluzione di SGMP(Simple Gateway Management Protocol).
 
 4 componenti fondamentali di SNMP:
-    -MIB(Management Information Bae): rete di database di dati eterogenei come contatori, range, valori booleani, stringhe, informazioni sullo stato, etc., ogni device ha il suo
-    -SMI: Structure of Management Information, come sono definiti i dati, si occupa della creazione degli Object all'interno dei devices,
-    -SNMP: il protocollo utilizzato nello scambio di informazioni
-    -Sicurezza, supportata solo dalla versione 3
+    -MIB(Management Information Base): rete di database di dati eterogenei come contatori, range, valori booleani, stringhe, informazioni sullo stato, etc., ogni device ha il suo,
+    -SMI: Structure of Management Information, ci dice come sono definiti i dati(che per noi sono gli Object dentro ai device),
+    -SNMP: il protocollo utilizzato nello scambio di informazioni tra agent e manager,
+    -Sicurezza, supportata solo dalla versione 3, serve a cifrare i messaggi tra i dispositivi e a proteggere il sistema da attacchi.
 
 SMI
 definisce la sintassi(come si scrivono) e la semantica(cosa significano) i dati. L'obiettivo è la non ambiguità dei dati.
-Tipi fondamentali di dati: numeri interi(signed o unsigned, 32 o 64 bit), stringhe, indirizzi ip, contatori(32 o 64 bit)  e OBJECT ID
+Tipi fondamentali di dati: numeri interi(signed o unsigned, 32 o 64 bit), stringhe, indirizzi ip, contatori(32 o 64 bit) e OBJECT ID
 OBJECT-TYPE: fanno riferimento ad un oggetto e ai suoi paramentri, coppie chiave valori tra object ip e object type
 MODULE-TYPE: oggetti simili sono raggruppati e gestiti da un modulo comune definito tramite SMI
 
@@ -52,9 +52,9 @@ esempio
 OBJECT-TYPE : ipInDelivers
 
 ipInDelivers OBJECT TYPE
-    SYNTAX      Counter32
-    MAX-ACCESS  read-only
-    STATUS      current
+    SYNTAX      Counter32           #(il tipo di dato fondamentale che usiamo)
+    MAX-ACCESS  read-only           #(è normale che la maggior parte di questi oggetti risulti read-only a questo livello, sarà il dispositivo ad aggiornare il valore)
+    STATUS      current             #(dovrebbe significare che il valore è aggiornato?)
     DESCRIPTION "The total number of input datagrams successfully delivered to IP user-protocols (including ICMP)"
 ::={ip 9}
 
@@ -77,6 +77,7 @@ Anche in SNMP si possono usare gli schemi Request-Response e Trap(un subscribe-n
 Nel caso delle trap, il Manager device configura delle Trap nei device, sono delle informazioni particolari che devono essere osservate, quando si verifica un certo evento si creare una notifica/allarme che viene inviata
 
 Tipologie di messaggi in SNMP:
+
     GetRequest
     GetNextRequest      tre tipologie di messaggi in cui il manager chiede agli agent una informazione
     GetBulkRequest 
@@ -97,22 +98,27 @@ Formato del pacchetto SNMP: preamble(serve ad indicare la lunghezza del pacchett
 
 Sicurezza
 
-è possibile cifrare il traffico SNMP per non inviare tutte le info dei dispositivi in chiaro, si utilizza l'algoritmo DES(usa chiavi condivise, richiede quindi la configurazione)
+autenticazione degli interlocutori, o viene fatta a priori prima di scambiare informazioni, oppure si utilizza il concetto di integrità dei dati + firma digitale per assicurarsi che l'interlocutore sia chi dica di essere.
+Inoltre, è possibile cifrare il traffico SNMP per non inviare tutte le info dei dispositivi in chiaro, si utilizza l'algoritmo DES(usa chiavi condivise, richiede quindi la configurazione)
 Si calcolano funzioni hash sul pacchetto utilizzando la chiave condivisa, il destinatario poi effettuerà l'operazione complementare per ottenere il pacchetto in chiaro.
+(Con il meccanismo di firma digitale e hashing ottengo sia cifratura che autenticazione/integrità dei dati)
+
 Si utilizzano nonce, degli id unici o delle password utilizzabili una sola volta, l'idea è che se un attaccante cattura un pacchetto snmp(anche cifrato), potrebbe continuare ad inviarlo in loop,
 portando il manager device a creare che lo stato del managed device non stia cambiando. le nonce evitano questo perchè ogni pacchetto è 'unico', ha un identificatore utilizzabile una sola volta, 
-perciò se si reinvia un pacchetto con una nonce già usato, si scarta a priori.
+perciò se si reinvia un pacchetto con una nonce già usato, si scarta a priori(protezione da attacchi di replay).
+
 Inoltre c'è controllo su chi ha accesso a che cosa, sia ai singoli object nei device che all'intero MIB
 
-In SNMPv3 si parte dalle stesse basi ma c'è una evoluzione, si hanno più processi SNMP che gestiscono i vari aspetti del protocollo(generazione/ricezione di comandi, generazione/ricezione di notifiche, etc.).
+In SNMPv3 si hanno più processi SNMP che gestiscono i vari aspetti del protocollo(generazione/ricezione di comandi, generazione/ricezione di notifiche, sicurezza, etc.).
 Ognuno di questi processi comunica con dei moduli sottostanti(gestione accesso, sicurezza e simili) che creano il pacchetto finale da inviare al transport layer.
 Gli header rimangono simili anche se i campi cambiano per diventare più specifici.
 
+
 Problema sulla presentazione dei dati:
-manager, agent, objects, tutte le entità coinvolte in SNMP si devono concordare sulla rappresentazione dei dati da utilizzare.
-Abbiamo problemi più tecnici(tipo Little Endian vs Big Endian) e problemi di più alto livello.
-quello che si fa è passare per un layer di presentazione che offre una versione più astratta/generale dei dati da utilizzare, prende il nome di Abstract Syntax Notation.
-in ASN si usa il TLV(Type-Length-Value), ovvero si indica il tipo di dato(dentro il framework ASN), la lunghezza del dato in byte e infine il valore
+manager, agent, objects, tutte le entità coinvolte in SNMP si devono concordare sulla rappresentazione dei dati da utilizzare, abbiamo problemi più tecnici(tipo Little Endian vs Big Endian) e problemi di più alto livello.
+Quello che si fa è passare per un layer di presentazione che offre una versione più astratta/generale dei dati da utilizzare, prende il nome di Abstract Syntax Notation.
+In ASN gli oggetti sono definiti in un certo modo, poi vengono definiti protocolli di traduzione da ASN a SMI, per la trasmissione di oggetti ASN si usano le BER(Basic Encoding Rules)
+Tra le varie BER, si usa il TLV(Type-Length-Value), ovvero si indica il tipo di dato(dentro il framework ASN), la lunghezza del dato in byte e infine il valore
 
 NETCONF
 se SNMP si può pensare come lo schema da utilizzare per analizzare/monitorare i dispositivi di rete, netconf offre un modo di configurare i dispostivi.
@@ -144,12 +150,12 @@ Operazioni NETCONF
 
 YANG: data modeling language, definisce i dati scambiati tramite il protocollo netconf, quindi definisce struttura, sintassi, semantica dei dati, l'equivalente dello SMI in SNMP.
 Una volta definita la configurazione usando lo YANG, si effettua una conversione in XML fino a generale il pacchetto il finale
-YANG però è indipendente da NETCONF, quindi è facilmente convertibile in altri formati di codifica dei dati come JSON, proprietà utile sfruttata dalla evoluzione di NETCONF
+YANG però è indipendente da NETCONF, quindi è facilmente convertibile in altri formati di codifica dei dati come JSON, proprietà utile sfruttata dalla evoluzione di NETCONF chiamata RESTCONF
 
 NETCONF -> RESTCONF
 rpc     -> REST API
 XML     -> JSON/YAML
 
 SNMP e NETCONF sono misure PASSIVE, ci permettono di collezionare statistiche aggregate sullo stato dei dispostivi ma non sempre è sufficiente.
-Questi protocolli lavorano su scale temporali dell'ordine del secondo o minuto, troppo lente per poter star dietro ad alcuni fenomeni di rete(alcuni attacchi durano solo qualche pacchetto processato nell'ordine dei microsecondi),
-è per questo che si introducono tecniche di monitoraggio del traffico, molto più veloci, con tempi paragonabili a quelli dei pacchetti(nel senso del routing/forwarding e simili)
+Questi protocolli lavorano su scale temporali dell'ordine del secondo o minuto, troppo lente per poter star dietro ad alcuni fenomeni di rete(alcuni attacchi durano solo qualche pacchetto processato nell'ordine dei microsecondi).
+E' per questo che si introducono tecniche di monitoraggio del traffico, molto più veloci, con tempi paragonabili a quelli dei pacchetti(nel senso del routing/forwarding e simili)
