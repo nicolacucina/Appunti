@@ -1,4 +1,5 @@
 All'interno delle reti troviamo centinaia o migliaia di dispositivi da dover monitorare, controllare e analizzare, in particolare si vuole: 
+
     -Rilevare errori di componenti,
     -Monitorare host, dispositivi e traffico,
     -Rilevare rapidi cambiamenti nelle tabelle di routing(per evitare che inizino a flippare),
@@ -28,7 +29,7 @@ Observe----------React
 All'interno della nostra rete, abbiamo una serie di Managed Devices(router, switch e altre componenti). 
 All'interno dei devices si trovano Managed Objects, che rappresentano il comportamento(un aspetto) di una componente.
 Questi Object sono gestiti da degli Agent, dei processi che sanno leggere i dati provenienti dal dispositivo(anche a livello circuitale) e creano gli Object di conseguenza(a livello logico).
-Gli Agent fanno riferimento ad una Managing Entity, un manager che osserva la rete e dopo aver interrogato gli agent, che salvano i dati all'interno di un MIB, Management Information Base, in funzione delle informazioni ricevute(salvate in un database personale) sa prendere delle decisioni, 
+Gli Agent fanno riferimento ad una Managing Entity, un manager che osserva la rete e dopo aver interrogato gli agent(che salvano i dati all'interno di un MIB) Management Information Base, in funzione delle informazioni ricevute(salvate in un database personale) sa prendere delle decisioni, 
 Le informazioni che troviamo in questo database sono di sola lettura, dato che sono log, pacchetti inviati/ricevuti, funziona si/no, etc.
 
 Lo scambio di dati tra Agent, Manager e MIB fa uso di protocolli specifici per il management, i primi ad essere stati utilizzati furono CMIP(Common Management Information Protocol) e SNMP(Simple Network Management Protocol)
@@ -36,6 +37,7 @@ Lo scambio di dati tra Agent, Manager e MIB fa uso di protocolli specifici per i
 il de facto standard utilizzato al momento è SNMP v3, nato come evoluzione di SGMP(Simple Gateway Management Protocol).
 
 4 componenti fondamentali di SNMP:
+
     -MIB(Management Information Base): rete di database di dati eterogenei come contatori, range, valori booleani, stringhe, informazioni sullo stato, etc., ogni device ha il suo,
     -SMI: Structure of Management Information, ci dice come sono definiti i dati(che per noi sono gli Object dentro ai device),
     -SNMP: il protocollo utilizzato nello scambio di informazioni tra agent e manager,
@@ -92,9 +94,9 @@ Tipologie di messaggi in SNMP:
 
 Formato del pacchetto SNMP: preamble(serve ad indicare la lunghezza del pacchetto, variabile a causa delle coppie chiave-valore) + header + payload
 
-    PDU Type , Request ID, Error Status, Error Index, {name: value, name: value, ...}
+    PDU Type, Request ID(scambio ordinato), Error Status, Error Index, {name: value, name: value, ...}
 
-    PDU Type, Enterprise, Agent Address, Trap Type, Specific Code, Timestamp, {name: value, name:value, ...}
+    PDU Type, Enterprise, Agent Address(riconoscere device), Trap Type, Specific Code, Timestamp, {name: value, name:value, ...}
 
 Sicurezza
 
@@ -109,10 +111,9 @@ perciò se si reinvia un pacchetto con una nonce già usato, si scarta a priori(
 
 Inoltre c'è controllo su chi ha accesso a che cosa, sia ai singoli object nei device che all'intero MIB
 
-In SNMPv3 si hanno più processi SNMP che gestiscono i vari aspetti del protocollo(generazione/ricezione di comandi, generazione/ricezione di notifiche, sicurezza, etc.).
-Ognuno di questi processi comunica con dei moduli sottostanti(gestione accesso, sicurezza e simili) che creano il pacchetto finale da inviare al transport layer.
-Gli header rimangono simili anche se i campi cambiano per diventare più specifici.
-
+Il più grande problema di SNMP era la mancanza di sicurezza, quindi le versioni SNMPv2 e v3 hanno lavorato principalmente su questo, introducendo meccanismi per contrastare
+attacchi di masquerade, modifica di pacchetti o flusso del traffico e disclosure(meccanisco con i digest delle funzioni di hash). Oltre a questo troviamo meccanismi
+per l'autenticazione e protezione privacy.
 
 Problema sulla presentazione dei dati:
 manager, agent, objects, tutte le entità coinvolte in SNMP si devono concordare sulla rappresentazione dei dati da utilizzare, abbiamo problemi più tecnici(tipo Little Endian vs Big Endian) e problemi di più alto livello.
@@ -121,14 +122,15 @@ In ASN gli oggetti sono definiti in un certo modo, poi vengono definiti protocol
 Tra le varie BER, si usa il TLV(Type-Length-Value), ovvero si indica il tipo di dato(dentro il framework ASN), la lunghezza del dato in byte e infine il valore
 
 NETCONF
-se SNMP si può pensare come lo schema da utilizzare per analizzare/monitorare i dispositivi di rete, netconf offre un modo di configurare i dispostivi.
-si lavora con RPC, Remote Procedure Call, in cui si inviano le configurazioni utilizzando il formato XML tramite TLS/TCP, parlando di pacchetti di configurazione,
+
+se SNMP si può pensare come lo schema/protocollo da utilizzare per analizzare/monitorare i dispositivi di rete, netconf offre un modo di configurare i dispostivi.
+si lavora con RPC, Remote Procedure Call, in cui si inviano le configurazioni utilizzando il formato XML(Extensible Markup Languange) tramite TLS/TCP, parlando di pacchetti di configurazione,
 è più importante che la config sia esatta(integra), quindi udp non può bastare(se arriva un pacchetto che contiene un errore e mi rovina la configurazione ho problemi).
 
 Architettura NETCONF
 
     Content             Qua si generano i dati di configurazione che si vogliono utilizzare o i dati da includere in una notifica/allarme
-    Operation           si creano i comandi che 'mettono in pratica' la config
+    Operation           si creano i comandi che implementano la config
     Messages            si creano/gestiscono i messaggi rpc
     Secure transport
     ...
@@ -153,7 +155,7 @@ Una volta definita la configurazione usando lo YANG, si effettua una conversione
 YANG però è indipendente da NETCONF, quindi è facilmente convertibile in altri formati di codifica dei dati come JSON, proprietà utile sfruttata dalla evoluzione di NETCONF chiamata RESTCONF
 
 NETCONF -> RESTCONF
-rpc     -> REST API
+rpc     -> REST API (anzichè invocare le funzioni direttamente da remoto, utilizzo le funzioni messe a disposizione dalla API)
 XML     -> JSON/YAML
 
 SNMP e NETCONF sono misure PASSIVE, ci permettono di collezionare statistiche aggregate sullo stato dei dispostivi ma non sempre è sufficiente.

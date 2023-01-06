@@ -2,8 +2,8 @@ Continuando il discorso sulle IDS, teoria di Machine learing applicato al networ
 
 Per poter scegliere l'approccio migliore(misuse o anomaly), occorre fare una prima analisi del dataset.
 Se mi aspetto che il comportamento futuro rimanga simile a quello attuale, voglio un dataset completo con ogni tipologia di attacco e addestrare su quello per fare misuse detection.
-Se ho dataset sbilanciati questo approccio non funziona, l'algoritmo non riesce ad apprendere bene come sia fatto un attacco, allora posso pensare di usare solo la porzione di traffico normale
-e addestrare per fare anomaly detection(che funziona pure meglio contro zero day attacks).
+Se ho dataset sbilanciati questo approccio non funziona bene, l'algoritmo non riesce ad apprendere bene come sia fatto un attacco, allora posso pensare di usare solo
+la porzione di traffico normale e addestrare per fare anomaly detection(che funziona pure meglio contro zero day attacks).
 
 La separazione tra le classi che fa IDS avviene sulla base di una metrica misurabile scelta a priori, si lavora con le pdf del traffico benigno/anomalo
 
@@ -11,7 +11,7 @@ Alcuni questioni:
     -come decido la threshold tra le due classi? non possiamo farlo a caso quindi occorre un meccanismo per trovarla
     -applico la threshold indiscriminatamente a tutti gli utenti? non dovrei
     -ogni quanto si aggiorna la threshold?
-    -in tutto questo, che prestazioni offre un metodo con soglia? un sola soglia è poco robusto,
+    -in tutto questo, che prestazioni offre un metodo con soglia? un sola soglia potrebbe essere poco robusta,
     posso pensare di creare un messanismo multisoglia con pericolosità incrementale, cosi posso in qualche modo 'filtrare' le anomalie
 
 Attacchi noti che vogliamo individuare:
@@ -27,18 +27,17 @@ Va fatta EDA per ridurre il più possibile la ridondanza nella feature e tenere 
 
 Modelli regressivi utili per predirre il futuro se ci sono pattern ciclici nel traffico
 Altri approcci usano reti neurali(per lavorare su un singolo parametroo più di uno, sono abbastanza potenti per poterlo fare),
- SMV(per trovare la boundry tra le classi) o alberi decisionali(nelle loro varie versioni)
+SMV(per trovare la boundry tra le classi) o alberi decisionali(nelle loro varie versioni)
 
-Performance 
+Performance(non confondere performance dell'algoritmo di classificazione con le metriche usate per calcolare le pdf)
 accuracy = cosa ho predetto bene/tutto quanto
 precision = di quello che ho predetto vero/ quanto è veramente vero? TP/TP+FP
 recall =  di quello che è veramente vero, quando ho predetto bene? TP/TP+FN
 
 Cerchiamo di mantenere FP e FN il più bassi possibile
 
-Altre Performance che possiamo utilizzare, metriche statische, solitamente sono un pò semplicistiche ma sono facilmente spiegabili, proprietà importante per noi, aiuta a comprendere costa sta accadendo
+Metriche utilizzabili sono metriche statische, solitamente sono un pò semplicistiche ma sono facilmente spiegabili, proprietà importante per noi, aiuta a comprendere costa sta accadendo
 Media 'classica' o mobile(per tener conto del tempo)
-
 Possiamo assumere che i nostri parametri abbiano distribuzione Gaussiana(pdf), cosa che ci aiuta a fare ipotesi sulla loro media/varianza.
 la Media però è un parametro polarizzato verso i valori molto grandi o piccoli.
 la mediana invece è meno polarizzata, 50% campioni più piccoli e 50% più grandi, non importa quanto siano più piccoli o più grandi.

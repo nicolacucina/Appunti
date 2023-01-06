@@ -155,7 +155,11 @@ Una prima regola che ci permette di limitare il traffico è:
     sudo iptables -A FORWARD -p tcp -d <ip del server nella rete privata> --dport 3000 -m limit --limit 50/sec --limit-burst 30 -j ACCEPT
 
 Stiamo limitando traffico nel router, le regole di NAT sono ancora valide ed operano nella chain PREROUTING, perciò qua nella chain FORWARD è già avvenuta la traduzione ip pubblico-ip privato.
-La politica che stiamo implementando però limita TUTTO il traffico, cosa che vogliamo invece riservare SOLO alle connessioni NEW.
+
+tecnica del Leaky Bucket, il traffico IN fa una operazione AND con dei 'token'(gocce che cadono dal secchio),
+se non ci sono token non passano i pacchetti, leaky bucket perchè se ho periodi con poco traffico 'salvo' questi token per far fronte a burst futuri
+
+La politica che stiamo implementando però limita TUTTO il traffic,cosa che vogliamo invece riservare SOLO alle connessioni NEW.
 Perciò quello che dobbiamo fare è creare una chain dedicata al limiting del traffico che verrà usata solo per connessioni nuove.
 
     sudo iptables -N RATE-LIMIT

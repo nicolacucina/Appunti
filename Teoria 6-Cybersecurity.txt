@@ -1,4 +1,4 @@
-Con il termine cybersecurity si intende la protezione della informazione(salvata, trasmessa o processata) e sicurezza  delle rete(dispositivi e collegamenti di rete).
+Con il termine cybersecurity si intende la protezione della informazione(salvata, trasmessa o processata) e sicurezza  delle rete(dispositivi e collegamenti/comunicazione di rete).
 Per quanto riguarda la sicurezza della informazione utilizziamo i seguenti termini:
 
     -Confidenzialità: si vuole far si che i dati non siano disponibili a personale non autorizzato, si vuole proteggere la privacy degli utenti e delle informazioni.
@@ -58,7 +58,7 @@ occorre:
 Quando l'attaccante decide di attaccare, si utilizza uno schema piramidale, l'attaccante 'controlla' direttamente degli 'zombie primari', che utilizzano degli 'zombie secondari' per lanciare gli attacchi verso la vittima.
 L'obiettivo è di rendere il servizio o la rete vittima non utilizzando, saturando le risorse di calcolo o di rete.
 
-Un altro schema è quello che usa i riflettori, ovvero l'attaccante usa ancora zombie primari e secondari, ma questi fanno attacchi di mirroring, ovvero inviano pacchetti a server well known, che poi rispondono inviando traffico al bersaglio.
+Un altro schema è quello che usa i reflettori, ovvero l'attaccante usa ancora zombie primari e secondari, ma questi fanno attacchi di mirroring, ovvero inviano pacchetti a server well known, che poi rispondono inviando traffico al bersaglio.
 più difficile da rilevare perchè il bersaglio vede solo connessioni verso server noti che non sono maligni(meccanismo visto a lezione di reflection con ip spoofing)
 
 Come possiamo difenderci?
@@ -75,7 +75,7 @@ troviamo:
     -Confidenzialità dei dati: servizio che protegge i dati trasmessi dagli attacchi passivi
     -Integrità dei dati: all'interno di una sessione, si accura che i pacchetti sono trasmessi senza duplicati, errori o modifiche, senza il concetto di sessione si assicura che i pacchetti non sono stati modificati
     -Non repudiabilità: fa si che i pacchetti non possonano essere scartati o ignorati
-    -Disponibilità: assicura che il sistema sia accessibile ed utilizzabile
+    -Disponibilità: assicura che il sistema sia accessibile ed utilizzabile(Back up e scalabilità)
 
 Tra i meccanismi di sicurezza troviamo:
     -algoritmi di crittografia
@@ -85,7 +85,12 @@ Tra i meccanismi di sicurezza troviamo:
     -padding del traffico(per evitare riconoscimento di pattern)
     -controllo del routing
     -controllo degli accessi
+    -notarizzazione(sempre meccanismo di firma/hashing, serve a rendere documenti ufficiali e non modificabili, come la firma del notaio)
 
+
+Sicurezza delle connessioni(TLS, SSL, HTTPS, IPSec, VPN)
+
+Sicurezza dei dispositivi(Firewall, IDS, intrusion prevention)
 
 Firewall
 

@@ -2,6 +2,7 @@ Si comincia da TCPdump, comando dei sistemi Unix che permette di interagire con 
 Si possono effettuare operazione di cattura e/o filtraggio del traffico, solitamente usate in ambienti in cui non lavora l'essere umano.
 
 Sintassi del comando:
+
     sudo tcpdump [options] [filter expressions]
 
     alcune opzioni:
@@ -9,7 +10,8 @@ Sintassi del comando:
     -w, scrive in un file il traffico,
     -r, legge un trace file con traffico salvato in precedenza.
 
-    alcune espressioni di filtraggio, si possono combinare con AND e OR
+    alcune espressioni di filtraggio, si possono combinare con and e or:
+    
     "udp", cattura traffico udp
     "tcp", cattura traffico tcp
     "[dst/src] port 53", cattura traffico sulla porta specificata, posso catturarlo sia unidirezionale che bidirezionale
@@ -27,9 +29,11 @@ adsl-69-228-230-7.dsl.pltn13.pacbell.net.2481: .
 2513546054:2513547434(1380) ack 1268355216 win 12816
 
 Wireshark e Tshark, evoluzione di tcpdump, sono definiti come 'packet sniffer e protocol analyzer', quindi oltre alla semplice cattura di traffico si fa analisi.
-L'analisi che si può effettuare con wireshark si limita principalmente al layer 3 e 4, l'app. layer si appoggia a ssl/tsl quindi i dati sono criptati e nel layer 2 troviamo tutto il traffico broadcast/multicast che è solo 'rumore' per quanto riguarda il network management
+L'analisi che si può effettuare con wireshark si limita principalmente al layer 3 e 4, l'app. layer si appoggia a ssl/tsl quindi i dati sono criptati e
+nel layer 2 troviamo tutto il traffico broadcast/multicast che è solo 'rumore' per quanto riguarda il network management
 
-E' grazie a tshark che possiamo realizzare le probe, delle sonde di rete che permettono di osservare il traffico che circola, utile per applicazioni di management automatizzate, mentre per noi umani risulata più utile lavorare con wireshark grazie alla interfaccia grafica
+E' grazie a tshark che possiamo realizzare le probe, delle sonde di rete che permettono di osservare il traffico che circola, utile per applicazioni
+di management automatizzate, mentre per noi umani risulata più utile lavorare con wireshark grazie alla interfaccia grafica
 
 in tcpdump, il filtraggio è di sola cattura(ovvero accetto solo i pacchetti specificati), 
 mentre in wireshark sono ammessi anche filtri di visualizzazione, ovvero cattura tutto ma poi mostro solo quello che mi interessa
@@ -51,7 +55,7 @@ Funzionamento di wireshark
                   |
 ------------------|-----------------------
                   |
-                packets
+               packets
 
 Struttura dell'NPF
 
@@ -63,7 +67,7 @@ Struttura dell'NPF
                /    |    \
               /     |     \
              /      |      \
-        filter  Statistical Dump Engine -> Kernel Buffer -> to Disk
+        filter Statistical  Dump Engine -> Kernel Buffer -> to Disk
             |      Engine           \
             |       |                \
         Kernel      |                 \
