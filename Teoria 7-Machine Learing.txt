@@ -106,6 +106,12 @@ Questo ragionamento viene estremizzato quando parliamo di deep neural network, d
 A causa di tutta questa potenza espressiva però le NN tendono ad overfittare il dataset, perciò si devono usare tecniche simili a quelle usate dalla random forest(dataset ridotto e feature ridotte).
 Vanishing gradient: dato che la maggior parte delle funzioni di attivazione tendono a saturare, il gradiente tende ad azzerarsi, portando l'algoritmo a non convergere.
 
+domanda che mi ha fatto su che metrica uso, a lezione abbiamo usare il mean square error, dove l'errore è la differenza tra input e la sua ricostruzione,
+se ho che il MSE è piccolo, poco errore, ho traffico benigno, altrimenti ho un attacco.
+devo definire una soglia sulla base del percentile, se errore è più piccolo della soglia è traffico benigno, altrimenti è attacco. PER COSTRUZIONE il avrò una accuracy/precision/recall(non ricordo quale delle 3) del 95%.
+Posso cambiare percentile per cambiare il rapporto falsi positivi/falsi negativi, se scelgo il 99esimo percentile, quello che succede è che la soglia aumenta, accetto come traffico benigno qualcosa con un errore maggiore, aumentano i falsi negativi(attacchi visti come benigni, cosa sempre da evitare)
+
+
 %addestro autoencoder solo su taffico benigno(riconosciuto dalla label, tecnica supervisionata)
 %ora la rete neurale sa cosa sia traffico normale e sa riconoscere bene quale sia il traffico non normale -> attacchi
 %una volta trovati i campioni di attacco, come li distinguo tra di loro? KNN sembra l'algoritmo che separa meglio gli attacchi probe dai DoS
